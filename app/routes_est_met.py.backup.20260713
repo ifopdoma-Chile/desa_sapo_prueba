@@ -1,0 +1,413 @@
+from flask import Blueprint, render_template, session, current_app,jsonify,request
+import folium
+from folium.plugins import SideBySideLayers, GroupedLayerControl, MousePosition, AntPath,TimestampedWmsTileLayers
+import geopandas as gpd
+import pandas as pd
+import os
+import json
+import psycopg2
+from datetime import datetime
+import logging
+from decimal import Decimal
+
+# JSON encoder personalizado para tipos no serializables (Decimal, etc.)
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        try:
+            return super().default(obj)
+        except TypeError:
+            return str(obj)
+
+from app.routes import main
+from app.db import get_db_connection
+
+# Configurar logging
+logger = logging.getLogger(__name__)
+
+maxzoom = 12
+minzoom = 3
+
+
+
+# --- agregado ---
+def _registrar_consulta_est_met(conn, codigo_estacion: int) -> None:
+    """
+    Registra la consulta de una estación meteorológica.
+
+    Nota: el navegador NO expone nombre/email reales del usuario.
+    Usamos User-Agent como 'nombre_consultante' y un placeholder para email.
+    """
+    try:
+        logger.info(f"Intentando registrar consulta para estación {codigo_estacion}")
+
+        ua = (request.headers.get("User-Agent") or "").strip()
+        if not ua:
+            ua = "desconocido"
+
+        # Evitar strings enormes (y potenciales problemas de tamaño en BD)
+        # Truncar a 100 caracteres para que coincida con VARCHAR(100) de la tabla
+        nombre_consultante = ua[:100]
+
+        # No existe una fuente confiable de email desde el navegador por defecto
+        email_consultante = "no-disponible"
+
+        fecha_hora = datetime.now()
+
+        sql = """
+              INSERT INTO doma_consultas_estaciones
+                  (fecha_hora, codigo_estacion, nombre_consultante, email_consultante)
+              VALUES (%s, %s, %s, %s)
+              """
+
+        logger.info(f"Ejecutando INSERT con: fecha_hora={fecha_hora}, codigo_estacion={codigo_estacion}, nombre={nombre_consultante[:50]}")
+
+        with conn.cursor() as cursor:
+            cursor.execute(sql, (fecha_hora, codigo_estacion, nombre_consultante, email_consultante))
+
+        conn.commit()
+        logger.info(f"Registro exitoso para estación {codigo_estacion}")
+
+    except Exception as e:
+        # Logging "best effort": no interrumpir la respuesta principal si falla el registro
+        logger.error(f"Error al registrar consulta para estación {codigo_estacion}: {str(e)}", exc_info=True)
+        try:
+            conn.rollback()
+        except Exception as rollback_error:
+            logger.error(f"Error en rollback: {str(rollback_error)}")
+
+@main.route('/estaciones_met')
+def estaciones_met():
+    try:
+        center = session.get('center', [-35, -110])
+        zoom = session.get('zoom', 4)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        sql = """
+              SELECT nombre, \
+                     detalle, \
+                     latitud, \
+                     longitud,
+                     CASE
+                         WHEN tipo = 1 THEN '1.- UDEC'
+                         WHEN tipo = 2 THEN '2.- IFOP'
+                         WHEN tipo = 3 THEN '3.- RedMeteo'
+                         WHEN tipo = 4 THEN '4.- IMARPE'
+                         WHEN tipo = 5 THEN '5.- BlueBoat'
+                         WHEN tipo = 6 THEN '6.- Armada'
+                         WHEN tipo = 7 THEN '7.- Est. Fijas'
+                         END AS tipo_estacion,
+                     geom, \
+                     link, \
+                     ubicacionid
+              FROM public.estaciones_link2
+              ORDER BY tipo \
+              """
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        m = folium.Map(
+            location=center,
+            zoom_start=zoom,
+            tiles=None, #'Esri WorldStreetMap',
+            minZoom =minzoom,
+            maxZoom =maxzoom,
+            zoomDelta=0.15,  # cada click + / - cambia 0.25 en vez de 1
+            zoomSnap=0.15,
+            wheelPxPerZoomLevel=250,
+        )
+        # Añadir el mosaico base directamente, pero fuera del control de capas
+        folium.TileLayer(
+            tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            attr='Esri',  # (Opcional) texto en la esquina inferior
+            name='Esri WorldStreetMap',  # El nombre que aparece en el mapa, pero no en LayerControl
+            control=False  # No incluir en el control de capas
+        ).add_to(m)
+        folium.plugins.Geocoder().add_to(m)
+        folium.plugins.LocateControl().add_to(m)
+
+        # If you want get the user device position after load the map, set auto_start=True
+        # Añadir el plugin MousePosition al mapa
+        formatter = "function(lat, lng) {return `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;}"
+
+        mouse_position = MousePosition(
+            position="bottomleft",  # Posición donde se mostrará (arriba a la derecha)
+            separator=" | ",
+            empty_string="",
+            lng_first=False,
+            num_digits=5,  # Número de decimales para mostrar
+            prefix="Coordenadas:",  # Prefijo del texto
+            lat_formatter=None,
+            lng_formatter=None,
+            formatter=formatter  # Mostrar las posiciones como se definió anteriormente
+        )
+        mouse_position.add_to(m)
+        # Agregar el script JS para copiar al portapapeles
+        # JavaScript para manejar clic en el cliente
+
+        # Cargar el shapefile de áreas marinas protegidas
+        shapefile_path = '/Data/python/sapo_prueba/app/static/shp/amp_nac_shp/AMP_NACIONAL.shp'
+        gdf = gpd.read_file(shapefile_path)
+        for column in gdf.columns:
+            if gdf[column].dtype == 'datetime64[ns]' or isinstance(gdf[column].iloc[0], pd.Timestamp):
+                gdf[column] = gdf[column].astype(str)
+        if 'geometry' in gdf.columns:
+            gdf = gdf[gdf.geometry.notnull()]
+            gdf = gdf[gdf.is_valid]
+        else:
+            raise ValueError(f"El shapefile en {shapefile_path} no contiene geometrías válidas.")
+        # Cargar áreas marinas protegidas en el mapa
+        fields = ['NOMBRE', 'TIPO_AMP', 'REGION']
+        geojson = folium.GeoJson(gdf, name='Áreas Marinas Protegidas',
+                                 style_function=lambda x: {'fillColor': 'lightgreen',
+                                                           'color': 'green', 'weight': 1, 'fillOpacity': 0.5, },
+                                 popup=folium.GeoJsonPopup(fields=fields, aliases=['Nombre', 'Tipo AMP', 'Región']),
+                                 tooltip=folium.GeoJsonTooltip(fields=fields, aliases=['Nombre', 'Tipo AMP', 'Región']),
+                                 show = False)
+        geojson.add_to(m)
+
+        color_icons = {
+            "1.- UDEC": 'yellow',
+            "2.- IFOP": 'blue',
+            "3.- RedMeteo": 'green',
+            "4.- IMARPE": 'red',
+            "5.- BlueBoat": 'purple',
+            "6.- Armada": 'darkgray',
+            "7.- Est. Fijas": 'brown'
+        }
+
+        # Función helper para sanitizar valores a tipos JSON-serializables
+        def _safe_val(v):
+            """Convierte Decimal u otros tipos no serializables a float/str."""
+            if isinstance(v, Decimal):
+                return float(v)
+            return v
+
+        # Colectar datos de estaciones para pasarlos al template
+        estaciones_data = []
+        feature_groups = {}
+        for row in rows:
+            tipo = row[4]
+            if tipo not in feature_groups:
+                feature_groups[tipo] = folium.FeatureGroup(name=tipo)
+
+            latitud_str = str(row[2]).replace(',', '.')
+            longitud_str = str(row[3]).replace(',', '.')
+            latitud = float(latitud_str)
+            longitud = float(longitud_str)
+            nombre = str(row[0]).strip().title()
+            region = str(row[1]).strip().title()
+            codigo_estacion = int(_safe_val(row[7]))
+
+            # Guardar metadata para el template (todo sanitizado para JSON)
+            estaciones_data.append({
+                'codigo': codigo_estacion,
+                'nombre': nombre,
+                'region': region,
+                'tipo': str(tipo),
+                'latitud': latitud,
+                'longitud': longitud
+            })
+
+            # Popup minimalista con solo info básica (el clic directo abre el panel)
+            popup_content = f"""
+            <div style="min-width:120px; font-family:system-ui,sans-serif;">
+                <strong style="font-size:13px;">{nombre}</strong><br>
+                <span style="font-size:11px; color:#555;">{region}</span><br>
+                <span style="font-size:10px; color:#888;">{tipo} · #{codigo_estacion}</span>
+            </div>
+            """
+
+            circle = folium.CircleMarker(
+                location=[latitud, longitud],
+                radius=6,
+                color='white',
+                fill=True,
+                fill_color=color_icons.get(tipo, 'blue'),
+                fill_opacity=0.9,
+                weight=1.5,
+                tooltip=nombre,
+                popup=folium.Popup(popup_content, max_width=220),
+            )
+            # Usar atributo HTML personalizado para identificar la estación
+            circle.options.update({
+                'className': f'estacion-marker-{codigo_estacion}',
+            })
+            feature_groups[tipo].add_child(circle)
+
+        for group in feature_groups.values():
+            m.add_child(group)
+
+        if feature_groups:
+            folium.LayerControl(collapsed=False).add_to(m)
+
+        #mapa_html = m._repr_html_()
+        # Guardar el archivo HTML del mapa
+        temp_map_path = os.path.join(current_app.root_path, 'static', 'map_est_met.html')
+        m.save(temp_map_path)
+        with open(temp_map_path, 'r') as f:
+            mapa_html = f.read()
+
+        # Limpia librerías redundantes del HTML generado automáticamente
+        mapa_html = mapa_html.replace(
+            '<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>', '')
+        mapa_html = mapa_html.replace(
+            '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>', '')
+        mapa_html = mapa_html.replace('<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>', '')
+        mapa_html = mapa_html.replace(
+            '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>',
+            '')
+
+        return render_template('estaciones.html', mapa_html=mapa_html, estaciones_json=json.dumps(estaciones_data))
+
+    except Exception as e:
+        return f"Error en el procesamiento del mapa: {str(e)}", 500
+
+
+@main.route('/get_est_met/<int:codigo_estacion>')
+def get_est_met(codigo_estacion):
+    try:
+        # Obtener parámetro opcional de rango horario (default 72h)
+        horas_str = request.args.get('horas', '72')
+        try:
+            horas = int(horas_str)
+            if horas < 1:
+                horas = 72
+            elif horas > 720:  # máximo 30 días
+                horas = 720
+        except ValueError:
+            horas = 72
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Obtener información de la estación
+        query_estacion = """
+                         SELECT nombre, \
+                                detalle, \
+                                longitud, \
+                                latitud,
+                                CASE
+                                    WHEN tipo = 1 THEN '1.- UDEC'
+                                    WHEN tipo = 2 THEN '2.- IFOP'
+                                    WHEN tipo = 3 THEN '3.- RedMeteo'
+                                    WHEN tipo = 4 THEN '4.- IMARPE'
+                                    WHEN tipo = 5 THEN '5.- BlueBoat'
+                                    WHEN tipo = 6 THEN '6.- Armada'
+                                    WHEN tipo = 7 THEN '7.- Est. Fija'
+                                    END AS tipo_estacion
+                         FROM public.estaciones_link2
+                         WHERE ubicacionid = %s; \
+                         """
+        cursor.execute(query_estacion, (codigo_estacion,))
+        estacion_info = cursor.fetchone()
+
+        if not estacion_info:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'No se encontró la estación'})
+
+        # Variables a consultar
+        variables = ['Temperatura', 'Presión', 'Humedad', 'Velocidad del Viento','Dirección del Viento','Ráfaga de Velocidad', 'Lluvia']
+        datos_graficos = {}
+
+        # Consulta para cada variable con rango horario dinámico
+        for variable in variables:
+            intervalo = f"{horas} hours"
+            query = """
+                    SELECT hora, valor, unidad
+                    FROM public.estaciones_valores(%s)
+                    WHERE nombre = %s
+                      AND hora >= NOW() - INTERVAL %s
+                    ORDER BY hora; \
+                    """
+            cursor.execute(query, (codigo_estacion, variable, intervalo))
+            resultados = cursor.fetchall()
+
+            datos_graficos[variable] = {
+                'x': [row[0].strftime('%Y-%m-%d %H:%M') for row in resultados],
+                'y': [float(row[1]) if row[1] is not None and str(row[1]).strip() != '' else None for row in resultados],
+                'unidad': resultados[0][2] if resultados and resultados[0][2] else ''
+            }
+
+        cursor.close()
+
+        # --- agregado: registrar consulta (best effort) ---
+        _registrar_consulta_est_met(conn, codigo_estacion)
+        # --- fin agregado ---
+
+        conn.close()
+
+        # Procesar los datos de la estación
+        nombre, detalle, longitud, latitud, tipo = estacion_info
+        info_estacion = {
+            'nombre': nombre,
+            'detalle': detalle,
+            'coordenadas': f"Lat: {latitud}, Lon: {longitud}",
+            'tipo': tipo
+        }
+
+        return jsonify({
+            'info_estacion': info_estacion,
+            'datos_graficos': datos_graficos
+        })
+
+    except Exception as e:
+        print(f"Error en get_est_met: {str(e)}")
+        return jsonify({'error': f'Error al obtener datos: {str(e)}'})
+
+@main.route('/get_est_met_todas')
+def get_est_met_todas():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Consulta para obtener todas las estaciones
+        query_all_estaciones = """
+                               SELECT ubicacionid, \
+                                      nombre, \
+                                      detalle, \
+                                      latitud, \
+                                      longitud, \
+                                      CASE
+                                          WHEN tipo = 1 THEN '1.- UDEC'
+                                          WHEN tipo = 2 THEN '2.- IFOP'
+                                          WHEN tipo = 3 THEN '3.- RedMeteo'
+                                          WHEN tipo = 4 THEN '4.- IMARPE'
+                                          WHEN tipo = 5 THEN '5.- BlueBoat'
+                                          WHEN tipo = 6 THEN '6.- Armada'
+                                          WHEN tipo = 7 THEN '7.- Est. Fija'
+                                      END AS tipo_estacion
+                               FROM public.estaciones_link2
+                               ORDER BY tipo;
+                               """
+
+        cursor.execute(query_all_estaciones)
+        estaciones = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        if not estaciones:
+            return jsonify({'error': 'No se encontraron estaciones'})
+
+        # Formatear la respuesta a JSON
+        estaciones_json = []
+        for estacion in estaciones:
+            codigo, nombre, detalle, latitud, longitud, tipo = estacion
+            estaciones_json.append({
+                'codigo': codigo,
+                'nombre': nombre,
+                'detalle': detalle,
+                'coordenadas': f"Lat: {latitud}, Lon: {longitud}",
+                'tipo': tipo
+            })
+
+        return jsonify(estaciones_json)
+
+    except Exception as e:
+        print(f"Error en get_all_estaciones: {str(e)}")
+        return jsonify({'error': f'Error al obtener estaciones: {str(e)}'})

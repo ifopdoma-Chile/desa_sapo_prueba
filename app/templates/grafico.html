@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+   <!--<h1>Gráficos de Variables por Estación</h1>-->
+   <h2>Detalles de la Estación</h2>
+   <ul>
+       <li>Nombre:<strong>{{ nombre }} </strong> </li>
+       <li><strong>Detalle: </strong> {{ detalle }}</li>
+       <li><strong>Latitud: </strong> {{ latitud }}</li>
+       <li><strong>Longitud: </strong> {{ longitud }}</li>
+       <li><strong>Código de Estación: </strong> {{ ubicacionid }}</li>
+   </ul>
+    <!-- Formulario para ingresar el código de la estación -->
+    <form method="POST">
+        <label for="codigo_estacion">Código de la Estación:</label>
+        <input type="number" id="codigo_estacion" name="codigo_estacion" required>
+        <button type="submit">Generar Gráficos</button>
+    </form>
+
+    <!-- Mostrar el código de estación seleccionado -->
+    <h3>Código de estación: {{ codigo_estacion }}</h3>
+
+    <div>
+        {% for grafico in graficos %}
+            <div style="margin-bottom: 20px;">
+                {{ grafico|safe }}
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

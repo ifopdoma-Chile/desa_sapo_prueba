@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comparación de ATSM y TSM</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
+
+    <!-- Leaflet Side-by-Side Plugin -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet-side-by-side/leaflet-side-by-side.css"
+    />
+    <script src="https://unpkg.com/leaflet-side-by-side/leaflet-side-by-side.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Inicializar el mapa
+        var map = L.map('map').setView([-35, -110], 4);
+
+        // URL base del servidor WMS
+        var wmsBaseUrl = "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?";
+
+        // Capa 1: Anomalía de Temperatura (ATSM)
+        var wms_atsm = L.tileLayer.wms(wmsBaseUrl, {
+            layers: 'Ifop_Sapo:Anomalia_temperatura',
+            format: 'image/png',
+            transparent: true,
+            version: '1.1.0',
+            attribution: 'IFOP',
+            opacity: 1.0
+        });
+
+        // Capa 2: Temperatura Superficial del Mar (TSM)
+        var wms_tsm = L.tileLayer.wms(wmsBaseUrl, {
+            layers: 'Ifop_Sapo:Temperatura',
+            format: 'image/png',
+            transparent: true,
+            version: '1.1.0',
+            attribution: 'IFOP',
+            opacity: 1.0
+        });
+
+        // Añadir control deslizante side-by-side
+        var sideBySide = L.control.sideBySide(wms_atsm, wms_tsm).addTo(map);
+    </script>
+</body>
+</html>

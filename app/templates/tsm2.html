@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div id="map-container" style="width: 100%; height: 100vh; position: fixed; top: 0; left: 0;">
+        {{ mapa_html | safe }}
+    </div>
+
+    <script>
+        // Busca el `div` que contiene el mapa generado por Folium
+        const mapContainer = document.querySelector('.folium-map'); // Selecciona el contenedor del mapa
+        const mapId = mapContainer ? mapContainer.id : null; // Obtén el ID del contenedor
+
+        if (mapId) {
+            // Busca la variable global creada para el mapa por su ID
+            const map = window[Object.keys(window).find(key => key.startsWith('map_') && key.includes(mapId))];
+
+            if (map) {
+                // Ahora puedes trabajar con los eventos o configuraciones del mapa
+                map.on('moveend', () => {
+                    const center = map.getCenter();
+                    const zoom = map.getZoom();
+
+                    // Enviar datos actualizados al servidor
+                    fetch('/app/actualizar_mapa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            center: [center.lat, center.lng],
+                            zoom: zoom
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log('Estado actualizado:', data))
+                    .catch(err => console.error('Error al actualizar:', err));
+                });
+            } else {
+                console.error('No se encontró el objeto de mapa generado por Folium');
+            }
+        } else {
+            console.error('No se encontró el contenedor del mapa en el DOM.');
+        }
+    </script>
+{% endblock %}

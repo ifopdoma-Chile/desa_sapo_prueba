@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="map" style="width: 100%; height: 100%;"></div>
+
+<script>
+    // Crear el mapa base
+    var map = L.map('map').setView([0, -70], 4);  // Ajusta el punto inicial y el zoom
+
+    // Agregar una capa base de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Ruta base para los archivos GeoJSON estáticos
+    var geojsonFiles = [
+        "/static/json/20250725_TSM.geojson",
+        "/static/json/20250726_TSM.geojson",
+        "/static/json/20250727_TSM.geojson"
+    ];
+
+    // Recorrer los archivos GeoJSON y agregarlos al mapa
+    geojsonFiles.forEach(function(file) {
+        fetch(file)
+            .then(response => response.json())
+            .then(data => {
+                // Crear la capa GeoJSON
+                var geoJsonLayer = L.geoJson(data, {
+                    style: function(feature) {
+                        // Estilo dinámico basado en el valor
+                        var value = feature.properties.value;
+                        return {
+                            weight: 1,
+                            color: "blue",
+                            fillColor: value > 20 ? "red" : "yellow",
+                            fillOpacity: 0.7
+                        };
+                    }
+                });
+
+                // Capa de TimeDimension para el manejo del tiempo
+                var timeDimensionLayer = L.timeDimension.layer.geoJson(geoJsonLayer, {
+                    updateTimeDimension: true,
+                    addlastPoint: false,
+                    duration: 'PT1H'
+                });
+
+                map.addLayer(timeDimensionLayer);
+            })
+            .catch(error => console.error("Error al cargar el archivo GeoJSON:", error));
+    });
+
+    // Control de TimeDimension (línea de tiempo)
+    var timeDimensionControl = new L.Control.TimeDimension({
+        position: "bottomleft",
+        autoPlay: true,
+        loopButton: true,
+        timeSlider: true,
+        speedSlider: true,
+        minSpeed: 0.5,
+        maxSpeed: 10
+    });
+    map.addControl(timeDimensionControl);
+</script>
+{% endblock %}

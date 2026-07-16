@@ -1,0 +1,420 @@
+[
+    {
+        "Id": "eb1d0bbfebe8d41b6609698adcad68040347ce58994bd108612bfe44be2effe9",
+        "Created": "2026-06-16T15:44:36.218071066Z",
+        "Path": "bash",
+        "Args": [
+            "start.sh"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 1060847,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-06-17T21:29:35.857293476Z",
+            "FinishedAt": "2026-06-17T21:29:35.514912047Z",
+            "Health": {
+                "Status": "healthy",
+                "FailingStreak": 0,
+                "Log": [
+                    {
+                        "Start": "2026-06-17T17:48:10.799920666-04:00",
+                        "End": "2026-06-17T17:48:10.927881729-04:00",
+                        "ExitCode": 0,
+                        "Output": "true\n"
+                    },
+                    {
+                        "Start": "2026-06-17T17:48:40.929209651-04:00",
+                        "End": "2026-06-17T17:48:41.045311061-04:00",
+                        "ExitCode": 0,
+                        "Output": "true\n"
+                    },
+                    {
+                        "Start": "2026-06-17T17:49:11.047216899-04:00",
+                        "End": "2026-06-17T17:49:11.16861947-04:00",
+                        "ExitCode": 0,
+                        "Output": "true\n"
+                    },
+                    {
+                        "Start": "2026-06-17T17:49:41.17049206-04:00",
+                        "End": "2026-06-17T17:49:41.291870087-04:00",
+                        "ExitCode": 0,
+                        "Output": "true\n"
+                    },
+                    {
+                        "Start": "2026-06-17T17:50:11.294192608-04:00",
+                        "End": "2026-06-17T17:50:11.41771899-04:00",
+                        "ExitCode": 0,
+                        "Output": "true\n"
+                    }
+                ]
+            }
+        },
+        "Image": "sha256:7f1b0a1a50cfbac23da3b16f96bc968fd757b26dc9e54e93813d61768ea9184e",
+        "ResolvConfPath": "/var/lib/docker/containers/eb1d0bbfebe8d41b6609698adcad68040347ce58994bd108612bfe44be2effe9/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/eb1d0bbfebe8d41b6609698adcad68040347ce58994bd108612bfe44be2effe9/hostname",
+        "HostsPath": "/var/lib/docker/containers/eb1d0bbfebe8d41b6609698adcad68040347ce58994bd108612bfe44be2effe9/hosts",
+        "LogPath": "/var/lib/docker/containers/eb1d0bbfebe8d41b6609698adcad68040347ce58994bd108612bfe44be2effe9/eb1d0bbfebe8d41b6609698adcad68040347ce58994bd108612bfe44be2effe9-json.log",
+        "Name": "/open-webui",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "open-webui:/app/backend/data"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "bridge",
+            "PortBindings": {
+                "8080/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "18080"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "always",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                41,
+                190
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [
+                "host.docker.internal:host-gateway"
+            ],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": [
+                {
+                    "Driver": "",
+                    "Count": -1,
+                    "DeviceIDs": null,
+                    "Capabilities": [
+                        [
+                            "gpu"
+                        ]
+                    ],
+                    "Options": {}
+                }
+            ],
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware",
+                "/sys/devices/system/cpu/cpu0/thermal_throttle",
+                "/sys/devices/system/cpu/cpu1/thermal_throttle",
+                "/sys/devices/system/cpu/cpu2/thermal_throttle",
+                "/sys/devices/system/cpu/cpu3/thermal_throttle",
+                "/sys/devices/system/cpu/cpu4/thermal_throttle",
+                "/sys/devices/system/cpu/cpu5/thermal_throttle",
+                "/sys/devices/system/cpu/cpu6/thermal_throttle",
+                "/sys/devices/system/cpu/cpu7/thermal_throttle",
+                "/sys/devices/system/cpu/cpu8/thermal_throttle",
+                "/sys/devices/system/cpu/cpu9/thermal_throttle",
+                "/sys/devices/system/cpu/cpu10/thermal_throttle",
+                "/sys/devices/system/cpu/cpu11/thermal_throttle",
+                "/sys/devices/system/cpu/cpu12/thermal_throttle",
+                "/sys/devices/system/cpu/cpu13/thermal_throttle",
+                "/sys/devices/system/cpu/cpu14/thermal_throttle",
+                "/sys/devices/system/cpu/cpu15/thermal_throttle",
+                "/sys/devices/system/cpu/cpu16/thermal_throttle",
+                "/sys/devices/system/cpu/cpu17/thermal_throttle",
+                "/sys/devices/system/cpu/cpu18/thermal_throttle",
+                "/sys/devices/system/cpu/cpu19/thermal_throttle",
+                "/sys/devices/system/cpu/cpu20/thermal_throttle",
+                "/sys/devices/system/cpu/cpu21/thermal_throttle",
+                "/sys/devices/system/cpu/cpu22/thermal_throttle",
+                "/sys/devices/system/cpu/cpu23/thermal_throttle",
+                "/sys/devices/system/cpu/cpu24/thermal_throttle",
+                "/sys/devices/system/cpu/cpu25/thermal_throttle",
+                "/sys/devices/system/cpu/cpu26/thermal_throttle",
+                "/sys/devices/system/cpu/cpu27/thermal_throttle",
+                "/sys/devices/system/cpu/cpu28/thermal_throttle",
+                "/sys/devices/system/cpu/cpu29/thermal_throttle",
+                "/sys/devices/system/cpu/cpu30/thermal_throttle",
+                "/sys/devices/system/cpu/cpu31/thermal_throttle",
+                "/sys/devices/system/cpu/cpu32/thermal_throttle",
+                "/sys/devices/system/cpu/cpu33/thermal_throttle",
+                "/sys/devices/system/cpu/cpu34/thermal_throttle",
+                "/sys/devices/system/cpu/cpu35/thermal_throttle",
+                "/sys/devices/system/cpu/cpu36/thermal_throttle",
+                "/sys/devices/system/cpu/cpu37/thermal_throttle",
+                "/sys/devices/system/cpu/cpu38/thermal_throttle",
+                "/sys/devices/system/cpu/cpu39/thermal_throttle",
+                "/sys/devices/system/cpu/cpu40/thermal_throttle",
+                "/sys/devices/system/cpu/cpu41/thermal_throttle",
+                "/sys/devices/system/cpu/cpu42/thermal_throttle",
+                "/sys/devices/system/cpu/cpu43/thermal_throttle",
+                "/sys/devices/system/cpu/cpu44/thermal_throttle",
+                "/sys/devices/system/cpu/cpu45/thermal_throttle",
+                "/sys/devices/system/cpu/cpu46/thermal_throttle",
+                "/sys/devices/system/cpu/cpu47/thermal_throttle",
+                "/sys/devices/system/cpu/cpu48/thermal_throttle",
+                "/sys/devices/system/cpu/cpu49/thermal_throttle",
+                "/sys/devices/system/cpu/cpu50/thermal_throttle",
+                "/sys/devices/system/cpu/cpu51/thermal_throttle",
+                "/sys/devices/system/cpu/cpu52/thermal_throttle",
+                "/sys/devices/system/cpu/cpu53/thermal_throttle",
+                "/sys/devices/system/cpu/cpu54/thermal_throttle",
+                "/sys/devices/system/cpu/cpu55/thermal_throttle",
+                "/sys/devices/system/cpu/cpu56/thermal_throttle",
+                "/sys/devices/system/cpu/cpu57/thermal_throttle",
+                "/sys/devices/system/cpu/cpu58/thermal_throttle",
+                "/sys/devices/system/cpu/cpu59/thermal_throttle",
+                "/sys/devices/system/cpu/cpu60/thermal_throttle",
+                "/sys/devices/system/cpu/cpu61/thermal_throttle",
+                "/sys/devices/system/cpu/cpu62/thermal_throttle",
+                "/sys/devices/system/cpu/cpu63/thermal_throttle",
+                "/sys/devices/system/cpu/cpu64/thermal_throttle",
+                "/sys/devices/system/cpu/cpu65/thermal_throttle",
+                "/sys/devices/system/cpu/cpu66/thermal_throttle",
+                "/sys/devices/system/cpu/cpu67/thermal_throttle",
+                "/sys/devices/system/cpu/cpu68/thermal_throttle",
+                "/sys/devices/system/cpu/cpu69/thermal_throttle",
+                "/sys/devices/system/cpu/cpu70/thermal_throttle",
+                "/sys/devices/system/cpu/cpu71/thermal_throttle",
+                "/sys/devices/system/cpu/cpu72/thermal_throttle",
+                "/sys/devices/system/cpu/cpu73/thermal_throttle",
+                "/sys/devices/system/cpu/cpu74/thermal_throttle",
+                "/sys/devices/system/cpu/cpu75/thermal_throttle",
+                "/sys/devices/system/cpu/cpu76/thermal_throttle",
+                "/sys/devices/system/cpu/cpu77/thermal_throttle",
+                "/sys/devices/system/cpu/cpu78/thermal_throttle",
+                "/sys/devices/system/cpu/cpu79/thermal_throttle",
+                "/sys/devices/system/cpu/cpu80/thermal_throttle",
+                "/sys/devices/system/cpu/cpu81/thermal_throttle",
+                "/sys/devices/system/cpu/cpu82/thermal_throttle",
+                "/sys/devices/system/cpu/cpu83/thermal_throttle",
+                "/sys/devices/system/cpu/cpu84/thermal_throttle",
+                "/sys/devices/system/cpu/cpu85/thermal_throttle",
+                "/sys/devices/system/cpu/cpu86/thermal_throttle",
+                "/sys/devices/system/cpu/cpu87/thermal_throttle",
+                "/sys/devices/system/cpu/cpu88/thermal_throttle",
+                "/sys/devices/system/cpu/cpu89/thermal_throttle",
+                "/sys/devices/system/cpu/cpu90/thermal_throttle",
+                "/sys/devices/system/cpu/cpu91/thermal_throttle",
+                "/sys/devices/system/cpu/cpu92/thermal_throttle",
+                "/sys/devices/system/cpu/cpu93/thermal_throttle",
+                "/sys/devices/system/cpu/cpu94/thermal_throttle",
+                "/sys/devices/system/cpu/cpu95/thermal_throttle"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "open-webui",
+                "Source": "/var/lib/docker/volumes/open-webui/_data",
+                "Destination": "/app/backend/data",
+                "Driver": "local",
+                "Mode": "z",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+        "Config": {
+            "Hostname": "eb1d0bbfebe8",
+            "Domainname": "",
+            "User": "0:0",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "8080/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "OLLAMA_BASE_URL=http://host.docker.internal:11434",
+                "COMFYUI_BASE_URL=http://host.docker.internal:8188",
+                "ENABLE_RAG_LOCAL_WEB_FETCH=true",
+                "USE_CUDA_DOCKER=true",
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+                "PYTHON_VERSION=3.11.15",
+                "PYTHON_SHA256=272179ddd9a2e41a0fc8e42e33dfbdca0b3711aa5abf372d3f2d51543d09b625",
+                "PYTHONUNBUFFERED=1",
+                "ENV=prod",
+                "PORT=8080",
+                "USE_OLLAMA_DOCKER=false",
+                "USE_SLIM_DOCKER=false",
+                "USE_CUDA_DOCKER_VER=cu128",
+                "USE_EMBEDDING_MODEL_DOCKER=sentence-transformers/all-MiniLM-L6-v2",
+                "USE_RERANKING_MODEL_DOCKER=",
+                "USE_AUXILIARY_EMBEDDING_MODEL_DOCKER=TaylorAI/bge-micro-v2",
+                "OPENAI_API_BASE_URL=",
+                "OPENAI_API_KEY=",
+                "WEBUI_SECRET_KEY=",
+                "SCARF_NO_ANALYTICS=true",
+                "DO_NOT_TRACK=true",
+                "ANONYMIZED_TELEMETRY=false",
+                "WHISPER_MODEL=base",
+                "WHISPER_MODEL_DIR=/app/backend/data/cache/whisper/models",
+                "RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2",
+                "RAG_RERANKING_MODEL=",
+                "AUXILIARY_EMBEDDING_MODEL=TaylorAI/bge-micro-v2",
+                "SENTENCE_TRANSFORMERS_HOME=/app/backend/data/cache/embedding/models",
+                "TIKTOKEN_ENCODING_NAME=cl100k_base",
+                "TIKTOKEN_CACHE_DIR=/app/backend/data/cache/tiktoken",
+                "HF_HOME=/app/backend/data/cache/embedding/models",
+                "HOME=/root",
+                "UV_LINK_MODE=copy",
+                "WEBUI_BUILD_VERSION=02dc3e689ceac915a870b373318b99c029ddf603",
+                "DOCKER=true"
+            ],
+            "Cmd": [
+                "bash",
+                "start.sh"
+            ],
+            "Healthcheck": {
+                "Test": [
+                    "CMD-SHELL",
+                    "curl --silent --fail http://localhost:${PORT:-8080}/health | jq -ne 'input.status == true' || exit 1"
+                ]
+            },
+            "Image": "ghcr.io/open-webui/open-webui:main",
+            "Volumes": null,
+            "WorkingDir": "/app/backend",
+            "Entrypoint": null,
+            "Labels": {
+                "org.opencontainers.image.created": "2026-06-02T02:11:54.957Z",
+                "org.opencontainers.image.description": "User-friendly AI Interface (Supports Ollama, OpenAI API, ...)",
+                "org.opencontainers.image.licenses": "NOASSERTION",
+                "org.opencontainers.image.revision": "02dc3e689ceac915a870b373318b99c029ddf603",
+                "org.opencontainers.image.source": "https://github.com/open-webui/open-webui",
+                "org.opencontainers.image.title": "open-webui",
+                "org.opencontainers.image.url": "https://github.com/open-webui/open-webui",
+                "org.opencontainers.image.version": "main"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "73467bc8e89792fb41d62754711a736353b1fce200798248afb9344703663428",
+            "SandboxKey": "/var/run/docker/netns/73467bc8e897",
+            "Ports": {
+                "8080/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "18080"
+                    }
+                ]
+            },
+            "Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "13d5975ab42c57496935986bca3b99faf2d38dde792addbfda3d5e887f3bd4f3",
+                    "EndpointID": "b4766d247b47afb5b13713aa735da498115f7b2e36e1467601e0e6a01f02f490",
+                    "Gateway": "172.17.0.1",
+                    "IPAddress": "172.17.0.2",
+                    "MacAddress": "d2:ca:82:9d:3d:97",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": null
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:9856d2e55452708a5cef79cf3ca0a80f859137167b195faf46e3275b665b8d65",
+            "size": 3713,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]

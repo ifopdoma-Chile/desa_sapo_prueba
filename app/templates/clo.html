@@ -1,0 +1,131 @@
+   {% extends 'base.html' %}
+
+   {% block content %}
+   <div id="map-container" style="width: 100%; height: 100vh; position: relative; z-index: 1;">
+       {{ mapa_html | safe }}
+       <div class="legend">
+        <img src="{{ legend_url }}" alt="Clorofila" style="width: auto; height: 300px;">
+    </div>
+
+   </div>
+   <script>
+(function() {
+  const mapDiv = document.querySelector('div[id^="map_"]');
+  if (!mapDiv) return;
+  const mapId = mapDiv.id;
+  const map = window[mapId];
+  if (!map || typeof L === 'undefined') return;
+
+  const proxyUrl = "/app/proxy_wms_featureinfo";
+  const wmsLayer = "Ifop_Sapo:Clorofila";
+
+  function getToken() {
+    const match = location.search.match(/(?:\?|&)token=([^\&]+)/i);
+    return match ? match[1] : null;
+  }
+
+  function buildFeatureInfoParams(latlng) {
+    const point = map.latLngToContainerPoint(latlng, map.getZoom());
+    const size = map.getSize();
+    const bounds = map.getBounds();
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+
+    const params = {
+      SERVICE: 'WMS',
+      REQUEST: 'GetFeatureInfo',
+      VERSION: '1.1.1',
+      SRS: 'EPSG:4326',
+      BBOX: [sw.lng, sw.lat, ne.lng, ne.lat].join(','),
+      WIDTH: size.x,
+      HEIGHT: size.y,
+      LAYERS: wmsLayer,
+      QUERY_LAYERS: wmsLayer,
+      INFO_FORMAT: 'application/json',
+      X: Math.round(point.x),
+      Y: Math.round(point.y)
+    };
+    const token = getToken();
+    if (token) params.token = token;
+    return params;
+  }
+
+  function buildQuery(qs) {
+    return Object.entries(qs).map(([k,v]) => k+"="+encodeURIComponent(v)).join("&");
+  }
+
+  async function consultarClorofila(latlng) {
+    const url = proxyUrl + '?' + buildQuery(buildFeatureInfoParams(latlng));
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+      let val = null;
+      if (
+        json.features &&
+        json.features.length > 0 &&
+        json.features[0].properties
+      ) {
+        // Clave exacta del GeoServer: Chlorophyll-a_concentration
+        val = json.features[0].properties["Chlorophyll-a_concentration"];
+        if (val !== undefined && val !== null) {
+          const num = Number(val);
+          // Si el valor es pequeño usa notación científica, si no, decimales normales
+          if (isFinite(num)) {
+            if (num > 0 && num < 0.01) return num.toExponential(2) + ' µg/L';
+            return num.toFixed(4) + ' µg/L';
+          }
+          return String(val) + ' µg/L';
+        }
+      }
+    } catch(e) {}
+    return null;
+  }
+
+  map.on('click', async function(e) {
+    const valor = await consultarClorofila(e.latlng);
+    if (valor)
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent('Clorofila (Chl-a):<b>' + valor + '</b>')
+          .openOn(map);
+  });
+})();
+</script>
+
+       <script>
+        // Busca el `div` que contiene el mapa generado por Folium
+        const mapContainer = document.querySelector('.folium-map'); // Selecciona el contenedor del mapa
+        const mapId = mapContainer ? mapContainer.id : null; // Obtén el ID del contenedor
+
+        if (mapId) {
+            // Busca la variable global creada para el mapa por su ID
+            const map = window[Object.keys(window).find(key => key.startsWith('map_') && key.includes(mapId))];
+
+            if (map) {
+                // Ahora puedes trabajar con los eventos o configuraciones del mapa
+                map.on('moveend', () => {
+                    const center = map.getCenter();
+                    const zoom = map.getZoom();
+
+                    // Enviar datos actualizados al servidor
+                    fetch('/app/actualizar_mapa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            center: [center.lat, center.lng],
+                            zoom: zoom
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log('Estado actualizado:', data))
+                    .catch(err => console.error('Error al actualizar:', err));
+                });
+            } else {
+                console.error('No se encontró el objeto de mapa generado por Folium');
+            }
+        } else {
+            console.error('No se encontró el contenedor del mapa en el DOM.');
+        }
+    </script>
+   {% endblock %}

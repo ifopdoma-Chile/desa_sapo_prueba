@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+<!-- Contenedor del mapa -->
+<div id="map-container" style="width: 100%; height: 100%; position: absolute;">
+    {{ mapa_html | safe }}
+</div>
+
+<!-- Contenedor para el gráfico flotante -->
+<div id="grafico-flotante" style="display: none; position: fixed; bottom: 20px; left: 50%;
+     transform: translateX(-50%); background-color: white; padding: 15px;
+     border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 2000; transition: all 0.3s ease;
+     max-height: 85vh; /* Altura máxima relativa */
+     overflow-y: auto;">
+
+    <!-- Botones de control -->
+    <div style="position: absolute; right: 10px; top: 10px; display: flex; gap: 10px;">
+        <button onclick="toggleTamano()" id="btnAmpliarReducir" style="border: none; background: #007bff; color: white;
+                padding: 5px 10px; border-radius: 5px; cursor: pointer;" title="Ampliar gráficos">⛶</button>
+        <button onclick="cerrarGrafico()" style="border: none; background: #dc3545; color: white;
+                padding: 5px 10px; border-radius: 5px; cursor: pointer;">&times;</button>
+    </div>
+
+    <!-- Encabezado con información de la estación en una línea -->
+    <div id="info-estacion" style="display: flex; align-items: center; gap: 20px; margin-bottom: 15px; padding-right: 30px;">
+        <!-- La información se llenará dinámicamente -->
+    </div>
+
+    <!-- Contenedor de gráficos -->
+    <div id="contenido-grafico" style="display: flex; flex-wrap: wrap; gap: 10px;
+         margin-bottom: 15px; justify-content: center;">
+        <p>Cargando gráficos...</p>
+    </div>
+
+    <!-- Formulario de envío por correo -->
+    <div id="formulario-correo" style="display: flex; gap: 10px; align-items: center; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+        <input type="text" id="nombre" placeholder="Nombre"
+               style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="email" id="email" placeholder="Correo electrónico"
+               style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <button onclick="enviarDatos()" id="btnEnviar"
+                style="background-color: #007bff; color: white; border: none;
+                       padding: 8px 20px; border-radius: 4px; cursor: pointer;
+                       white-space: nowrap; min-width: 120px;">
+            Enviar datos
+        </button>
+    </div>
+</div>
+
+<script>
+let datosGraficosActuales = null;
+let codigoEstacionActual = null;
+let infoEstacionActual = null;
+let esGrande = false; // Variable global para el estado del tamaño
+
+function mostrarGrafico(codigo_estacion) {
+    {#console.log("Función mostrarGrafico llamada con código:", codigo_estacion);#}
+
+    const graficoFlotante = document.getElementById('grafico-flotante');
+
+    // Restablecer el estado inicial cuando se abre el recuadro
+    esGrande = false;
+    const btnAmpliar = document.getElementById('btnAmpliarReducir');
+    if (btnAmpliar) {
+        btnAmpliar.textContent = '⛶'; // Símbolo de ampliar
+        btnAmpliar.setAttribute('title', 'Ampliar gráficos');
+    }
+
+    ajustarTamaño(); // Aplicar el tamaño inicial
+
+    document.getElementById('grafico-flotante').style.display = 'block';
+    codigoEstacionActual = codigo_estacion;
+
+    fetch(`/app/get_est_ocean/${codigo_estacion}`)
+        .then(response => response.json())
+        .then(data => {
+            datosGraficosActuales = data.datos_graficos;
+            infoEstacionActual = data.info_estacion;
+
+            // Mostrar información de la estación
+            const infoEstacion = document.getElementById('info-estacion');
+            infoEstacion.innerHTML = `
+                <strong>${data.info_estacion.nombre}</strong> |
+                <span>Región: ${data.info_estacion.detalle}</span> |
+                <span>Coordenadas: ${data.info_estacion.coordenadas}</span> |
+                <span>Tipo: ${data.info_estacion.tipo}</span>
+            `;
+
+            // Crear los gráficos
+            const contenedorGrafico = document.getElementById('contenido-grafico');
+            contenedorGrafico.innerHTML = '';
+            contenedorGrafico.style.display = 'grid';
+
+            const variables = Object.keys(data.datos_graficos);
+            variables.forEach((variable, index) => {
+                const graficoDiv = document.createElement('div');
+                graficoDiv.id = `grafico-${index}`;
+                contenedorGrafico.appendChild(graficoDiv);
+            });
+
+            // Ajustar tamaño inicial
+            ajustarTamaño();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('contenido-grafico').innerHTML =
+                `<p style="color: red;">Error al cargar los datos: ${error.message}</p>`;
+        });
+}
+
+function toggleTamano() {
+    esGrande = !esGrande;
+    const btnAmpliar = document.getElementById('btnAmpliarReducir');
+
+    if (esGrande) {
+        btnAmpliar.textContent = '⮌'; // Símbolo de reducir
+        btnAmpliar.setAttribute('title', 'Reducir gráficos');
+    } else {
+        btnAmpliar.textContent = '⛶'; // Símbolo de ampliar
+        btnAmpliar.setAttribute('title', 'Ampliar gráficos');
+    }
+
+    ajustarTamaño();
+}
+
+function cerrarGrafico() {
+    const graficoFlotante = document.getElementById('grafico-flotante');
+    if (graficoFlotante) {
+        graficoFlotante.style.display = 'none';
+        // Restablecer el estado al cerrar
+        esGrande = false;
+        const btnAmpliar = document.getElementById('btnAmpliarReducir');
+        if (btnAmpliar) {
+            btnAmpliar.textContent = '⛶';
+            btnAmpliar.setAttribute('title', 'Ampliar gráficos');
+        }
+    }
+}
+
+function ajustarTamaño() {
+    const contenedorGrafico = document.getElementById('contenido-grafico');
+    const graficoFlotante = document.getElementById('grafico-flotante');
+
+    if (esGrande) {
+        const vpWidth = Math.min(window.innerWidth * 0.85, 800); // Reducido a 800px máximo
+        const vpHeight = Math.min(window.innerHeight * 0.75, 600); // Reducido a 600px máximo
+
+        contenedorGrafico.style.width = `${vpWidth}px`;
+        contenedorGrafico.style.height = `${vpHeight}px`;
+        contenedorGrafico.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        graficoFlotante.style.width = `${vpWidth + 30}px`;
+
+        // Tamaños reducidos para los gráficos individuales
+        const graphWidth = (vpWidth - 40) / 2;
+        const graphHeight = (vpHeight - 40) / 2;
+
+        actualizarGraficos(graphWidth, graphHeight);
+    } else {
+        contenedorGrafico.style.width = '700px'; // Reducido
+        contenedorGrafico.style.height = 'auto';
+        contenedorGrafico.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        graficoFlotante.style.width = '750px'; // Reducido
+
+        actualizarGraficos(160, 130); // Tamaños más pequeños
+    }
+}
+
+function actualizarGraficos(width, height) {
+    const variables = Object.keys(datosGraficosActuales || {});
+    variables.forEach((variable, index) => {
+        const graficoDiv = document.getElementById(`grafico-${index}`);
+        if (graficoDiv) {
+            const trace = {
+                x: datosGraficosActuales[variable].x,
+                y: datosGraficosActuales[variable].y,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: variable,
+                marker: { size: 3 }
+            };
+
+            const fontSize = esGrande ? 11 : 9;
+            const unidad = datosGraficosActuales[variable].unidad || '';
+
+            Plotly.newPlot(`grafico-${index}`, [trace], {
+                title: {
+                    text: variable,
+                    font: { size: fontSize + 1 }
+                },
+                width: width,
+                height: height,
+                margin: { l: 45, r: 10, t: 30, b: 30 },
+                font: { size: fontSize },
+                autosize: true,
+                showlegend: false,
+                xaxis: {
+                    tickfont: { size: fontSize - 1 }
+                },
+                yaxis: {
+                    tickfont: { size: fontSize - 1 },
+                    title: {
+                        text: unidad,
+                        font: { size: fontSize }
+                    }
+                }
+            });
+        }
+    });
+}
+
+// ... (código anterior)
+
+async function enviarDatos() {
+    const nombre = document.getElementById('nombre').value;
+    const email = document.getElementById('email').value;
+    const btnEnviar = document.getElementById('btnEnviar');
+
+    if (!nombre || !email) {
+        alert('Por favor complete todos los campos');
+        return;
+    }
+
+    // Cambiar el botón a estado de "enviando"
+    btnEnviar.innerHTML = `
+        <span style="display: inline-block; animation: thinking 1s infinite;">
+            Enviando...
+        </span>`;
+    btnEnviar.disabled = true;
+    btnEnviar.style.backgroundColor = '#6c757d';
+
+    const datos = {
+        nombre_usuario: nombre,
+        email: email,
+        codigo_estacion: codigoEstacionActual,
+        datos: datosGraficosActuales,
+        info_estacion: infoEstacionActual
+    };
+
+    try {
+        const response = await fetch('/app/enviar_datos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(datos)
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            // Limpiar los campos y mostrar confirmación temporal
+            document.getElementById('nombre').value = '';
+            document.getElementById('email').value = '';
+
+            btnEnviar.innerHTML = '✓ Enviado';
+            btnEnviar.style.backgroundColor = '#28a745';
+
+            // Después de 2 segundos, restaurar el botón
+            setTimeout(() => {
+                btnEnviar.innerHTML = 'Enviar datos';
+                btnEnviar.disabled = false;
+                btnEnviar.style.backgroundColor = '#007bff';
+            }, 2000);
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        btnEnviar.innerHTML = '✗ Error';
+        btnEnviar.style.backgroundColor = '#dc3545';
+
+        setTimeout(() => {
+            btnEnviar.innerHTML = 'Enviar datos';
+            btnEnviar.disabled = false;
+            btnEnviar.style.backgroundColor = '#007bff';
+        }, 2000);
+    }
+}
+
+// Agregar el estilo de la animación
+const style = document.createElement('style');
+style.textContent = `
+@keyframes thinking {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.5; }
+}`;
+document.head.appendChild(style);
+
+window.onload = function () {
+        ajustarMapa();
+    };
+window.onresize = function () {
+        ajustarMapa();
+    };
+
+function ajustarMapa() {
+        const mapDiv = document.getElementById('map-container');
+        if (mapDiv && mapDiv._leaflet_map) {
+            const map = mapDiv._leaflet_map;
+            map.invalidateSize(); // Forzar que Leaflet ajuste el tamaño del mapa
+        }
+    }
+
+</script>
+{% endblock %}

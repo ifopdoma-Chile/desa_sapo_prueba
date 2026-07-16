@@ -1,0 +1,239 @@
+<!-- html -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Corrientes (Leaflet-velocity + ráster |U|)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-velocity/dist/leaflet-velocity.css"/>
+  <script src="https://unpkg.com/leaflet-velocity/dist/leaflet-velocity.min.js"></script>
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .controls { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(255,255,255,0.92); padding: 8px; border-radius: 6px; }
+    .legend { position: absolute; bottom: 10px; left: 10px; z-index: 1000; background: rgba(255,255,255,0.9); padding: 8px 10px; border-radius: 6px; font: 12px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .colorbar { width: 240px; height: 14px; background: linear-gradient(to right, #30123b, #4145ab, #2bb3dd, #7de07d, #fde725); border: 1px solid #888; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="controls">
+    <button id="btnPlay">Play</button>
+    <button id="btnPause">Pause</button>
+    <input id="slider" type="range" min="0" max="{{ info.n_frames - 1 }}" value="0" step="1" style="width:360px;">
+    <div>Fecha: <span id="fecha">{{ info.fechas[0] }}</span></div>
+  </div>
+
+  <div class="legend">
+    <div>Magnitud |U| (m/s), escala aprox 0 a p98</div>
+    <div class="colorbar"></div>
+  </div>
+
+<script>
+  const bounds = [[{{ info.lat_min }}, {{ info.lon_min }}], [{{ info.lat_max }}, {{ info.lon_max }}]];
+  const fechas = {{ info.fechas|tojson }};
+  const map = L.map('map').fitBounds(bounds);
+
+  // Base
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
+
+  // Pane dedicado para velocity por encima del ráster
+  map.createPane('velocityPane');
+  map.getPane('velocityPane').style.zIndex = 650;
+  map.getPane('velocityPane').style.pointerEvents = 'none';
+
+  const urlUvVelocity = "{{ url_for('main.api_uv_velocity') }}";
+  const urlUvMag = "{{ url_for('main.api_uv_mag_png') }}";
+
+  let frame = 0;
+  let playing = false;
+
+  // Capas de velocity en doble buffer
+  let velocityLayerA = null; // capa visible actual
+  let velocityLayerB = null; // capa entrante (invisible durante warmup)
+  let currentLayer = 'A';    // o 'B'
+
+  // Ráster |U|
+  let magOverlay = null;
+
+  const slider = document.getElementById('slider');
+  const spanFecha = document.getElementById('fecha');
+
+  // Caché de datos velocity
+  const dataCache = new Map(); // key: frame index, value: Promise(payload)
+
+  function getVelocityData(i, stride=3) {
+    if (!dataCache.has(i)) {
+      const p = fetch(`${urlUvVelocity}?t=${i}&s=${stride}&_=${Date.now()}`)
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then(data => {
+          if (!Array.isArray(data) || data.length < 2) throw new Error('Formato velocity inválido');
+          return data;
+        })
+        .catch(err => {
+          console.error('velocity fetch error:', err);
+          dataCache.delete(i);
+          throw err;
+        });
+      dataCache.set(i, p);
+    }
+    return dataCache.get(i);
+  }
+
+  function magUrl(i) {
+    // return `${urlUvMag}?t=${i}&s=1&vmax=0.6&_=${Date.now()}`; // si quieres paleta fija
+    return `${urlUvMag}?t=${i}&s=1&_=${Date.now()}`;
+  }
+
+  function updateRaster(i) {
+    if (!magOverlay) {
+      magOverlay = L.imageOverlay(magUrl(i), bounds, { opacity: 0.8, interactive: false }).addTo(map);
+    } else {
+      magOverlay.setUrl(magUrl(i));
+    }
+  }
+
+  // Crear capa velocity (sin tocar opacidad)
+  function createVelocityLayer(data) {
+    const layer = L.velocityLayer({
+      data,
+      pane: 'velocityPane',
+      displayValues: true,
+      displayOptions: {
+        velocityType: 'm/s',
+        position: 'bottomleft',
+        emptyString: 'Sin datos',
+        angleConvention: 'bearingCW',
+        speedUnit: 'm/s'
+      },
+      maxVelocity: 0.9,
+      velocityScale: 0.08,
+      particleMultiplier: 1/20,
+      particleAge: 160,   // mayor edad => mayor continuidad visual
+      frameRate: 24,
+      lineWidth: 1.6,
+      opacity: 1.0
+    });
+    layer.addTo(map);
+    return layer;
+  }
+
+  // Mostrar/ocultar capa sin tocar opacidad (evita rutas internas del plugin)
+  function setLayerVisibility(layer, visible) {
+    if (!layer) return;
+    try {
+      // Oculta/Visualiza el canvas (no cambia opacidad)
+      if (layer._canvas) layer._canvas.style.visibility = visible ? 'visible' : 'hidden';
+      else if (layer._windy && layer._windy.canvas) layer._windy.canvas.style.visibility = visible ? 'visible' : 'hidden';
+    } catch (_) {}
+  }
+
+  async function ensureInitialLayers(i) {
+    const data = await getVelocityData(i, 3);
+    if (!velocityLayerA && !velocityLayerB) {
+      velocityLayerA = createVelocityLayer(data);
+      setLayerVisibility(velocityLayerA, true);
+      currentLayer = 'A';
+    }
+  }
+
+  function preload(i) {
+    if (!dataCache.has(i)) {
+      getVelocityData(i, 3).catch(() => {});
+    }
+  }
+
+  async function updateFrameDirect(i) {
+    frame = Math.max(0, Math.min(i, {{ info.n_frames - 1 }}));
+    slider.value = frame;
+    updateRaster(frame);
+    await ensureInitialLayers(frame);
+    spanFecha.textContent = fechas[frame];
+    preload((frame + 1) % {{ info.n_frames }});
+  }
+
+  // Transición sin opacidad: la capa nueva se “calienta” invisible y luego se intercambia
+  async function transitionTo(nextIndex, warmupMs = 900) {
+    const dataNext = await getVelocityData(nextIndex, 3);
+
+    // Capa entrante: agregar y mantener invisible para calentar partículas
+    const incoming = createVelocityLayer(dataNext);
+    setLayerVisibility(incoming, false); // invisble durante warmup
+
+    const outgoing = (currentLayer === 'A') ? velocityLayerA : velocityLayerB;
+
+    // Warmup: deja que la capa entrante anime sus partículas sin mostrarse
+    await new Promise(resolve => setTimeout(resolve, warmupMs));
+
+    // Switch instantáneo: mostrar entrante, ocultar y remover saliente
+    setLayerVisibility(incoming, true);
+    setLayerVisibility(outgoing, false);
+    try { map.removeLayer(outgoing); } catch (_) {}
+
+    // Actualiza referencias
+    if (currentLayer === 'A') {
+      velocityLayerB = incoming;
+      currentLayer = 'B';
+    } else {
+      velocityLayerA = incoming;
+      currentLayer = 'A';
+    }
+
+    // Cambia ráster al nuevo día (sin crossfade)
+    updateRaster(nextIndex);
+
+    frame = nextIndex;
+    slider.value = frame;
+    spanFecha.textContent = fechas[frame];
+
+    // Precarga el siguiente
+    preload((frame + 1) % {{ info.n_frames }});
+  }
+
+  function scheduleNext() {
+    if (!playing) return;
+    const next = (frame + 1) % {{ info.n_frames }};
+    transitionTo(next, 900).then(() => {
+      if (playing) {
+        // Sin pausa extra: comienza siguiente transición inmediatamente
+        setTimeout(() => { if (playing) scheduleNext(); }, 0);
+      }
+    }).catch(err => console.error('transition error:', err));
+  }
+
+  // Eventos UI
+  slider.addEventListener('input', async e => {
+    const val = parseInt(e.target.value, 10);
+    playing = false;
+    // Limpia layers para un salto limpio
+    if (velocityLayerA) { try { map.removeLayer(velocityLayerA); } catch(_) {} velocityLayerA = null; }
+    if (velocityLayerB) { try { map.removeLayer(velocityLayerB); } catch(_) {} velocityLayerB = null; }
+    await updateFrameDirect(val);
+  });
+
+  document.getElementById('btnPlay').addEventListener('click', async () => {
+    if (!playing) {
+      playing = true;
+      await updateFrameDirect(frame);
+      scheduleNext();
+    }
+  });
+
+  document.getElementById('btnPause').addEventListener('click', () => {
+    playing = false;
+  });
+
+  // Carga inicial
+  (async () => {
+    await updateFrameDirect(0);
+    preload(1);
+  })();
+</script>
+
+</body>
+</html>

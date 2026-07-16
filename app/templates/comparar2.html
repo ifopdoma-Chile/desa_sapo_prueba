@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- Contenedor del mapa -->
+<div id="map-container" style="width: 100%; height: 100vh; position: fixed; top: 0; left: 0;">
+    {{ mapa_html | safe }}
+</div>
+
+<!-- Controles para seleccionar las capas -->
+<div id="layer-controls" style="
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    z-index: 1000;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    text-align: center;">
+    <label for="left-layer" style="margin-right: 10px;">Capa izquierda:</label>
+    <select id="left-layer" style="margin-right: 20px;">
+        <option value="Anomalia_temperatura">Anomalía de Temperatura</option>
+        <option value="Temperatura">Temperatura (TSM)</option>
+        <option value="Clorofila">Clorofila</option>
+    </select>
+
+    <label for="right-layer" style="margin-right: 10px;">Capa derecha:</label>
+    <select id="right-layer">
+        <option value="Anomalia_temperatura">Anomalía de Temperatura</option>
+        <option value="Temperatura">Temperatura (TSM)</option>
+        <option value="Clorofila">Clorofila</option>
+    </select>
+</div>
+
+<!-- Incluimos el archivo JavaScript -->
+<script src="{{ url_for('static', filename='js/comparar.js') }}?v=1.0"></script>
+
+{% endblock %}

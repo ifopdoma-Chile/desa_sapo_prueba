@@ -1,0 +1,103 @@
+<!-- html -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>ATSM (animación diaria)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .controls { position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(255,255,255,0.92); padding: 8px; border-radius: 6px; }
+    .legend { position: absolute; bottom: 10px; left: 10px; z-index: 1000; background: rgba(255,255,255,0.9); padding: 8px 10px; border-radius: 6px; font: 12px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .colorbar { width: 240px; height: 14px; background: linear-gradient(to right, #313695, #4575b4, #74add1, #abd9e9, #e0f3f8, #ffffbf, #fee090, #fdae61, #f46d43, #d73027, #a50026); border: 1px solid #888; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="controls">
+    <button id="btnPlay">Play</button>
+    <button id="btnPause">Pause</button>
+    <input id="slider" type="range" min="0" max="{{ info.n_frames - 1 }}" value="0" step="1" style="width:360px;">
+    <div>Fecha: <span id="fecha">{{ info.fechas[0] }}</span></div>
+  </div>
+
+  <div class="legend">
+    <div>Anomalía TSM (°C), paleta divergente centrada en 0</div>
+    <div class="colorbar"></div>
+  </div>
+
+<script>
+  const bounds = [[{{ info.lat_min }}, {{ info.lon_min }}], [{{ info.lat_max }}, {{ info.lon_max }}]];
+  const fechas = {{ info.fechas|tojson }};
+  const map = L.map('map').fitBounds(bounds);
+
+  // Base
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
+
+  const urlAtsmPng = "{{ url_for('main.api_atsm_png') }}";
+
+  let frame = 0;
+  let playing = false;
+  let overlay = null;
+
+  const slider = document.getElementById('slider');
+  const spanFecha = document.getElementById('fecha');
+
+  function atsmUrl(i) {
+    // v: fija escala simétrica si quieres; o elimina &v= para escala automática por p98
+    return `${urlAtsmPng}?t=${i}&s=1&_=${Date.now()}`;
+  }
+
+  function updateRaster(i) {
+    if (!overlay) {
+      overlay = L.imageOverlay(atsmUrl(i), bounds, { opacity: 0.85, interactive: false }).addTo(map);
+    } else {
+      overlay.setUrl(atsmUrl(i));
+    }
+  }
+
+  async function updateFrameDirect(i) {
+    frame = Math.max(0, Math.min(i, {{ info.n_frames - 1 }}));
+    slider.value = frame;
+    updateRaster(frame);
+    spanFecha.textContent = fechas[frame];
+  }
+
+  function scheduleNext() {
+    if (!playing) return;
+    const next = (frame + 1) % {{ info.n_frames }};
+    updateFrameDirect(next).then(() => {
+      if (playing) setTimeout(scheduleNext, 300); // velocidad de animación
+    });
+  }
+
+  // Eventos UI
+  slider.addEventListener('input', async e => {
+    const val = parseInt(e.target.value, 10);
+    playing = false;
+    await updateFrameDirect(val);
+  });
+
+  document.getElementById('btnPlay').addEventListener('click', async () => {
+    if (!playing) {
+      playing = true;
+      await updateFrameDirect(frame);
+      scheduleNext();
+    }
+  });
+
+  document.getElementById('btnPause').addEventListener('click', () => {
+    playing = false;
+  });
+
+  // Carga inicial
+  (async () => {
+    await updateFrameDirect(0);
+  })();
+</script>
+
+</body>
+</html>

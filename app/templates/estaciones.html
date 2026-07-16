@@ -1,0 +1,1219 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+<style>
+/* ============================================================
+   VARIABLES CSS - Paleta profesional
+   ============================================================ */
+:root {
+  --panel-bg: #ffffff;
+  --panel-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 6px 16px rgba(0,0,0,0.10);
+  --header-bg: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+  --header-text: #ffffff;
+  --header-secondary: rgba(255,255,255,0.85);
+  --card-bg: #f8f9fa;
+  --card-border: #e9ecef;
+  --card-hover-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  --primary: #1a73e8;
+  --primary-light: #e8f0fe;
+  --danger: #dc3545;
+  --success: #28a745;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6c757d;
+  --text-muted: #9e9e9e;
+  --tag-udec: #fbc02d;
+  --tag-ifop: #1a73e8;
+  --tag-redmeteo: #2e7d32;
+  --tag-imarpe: #d32f2f;
+  --tag-blueboat: #7b1fa2;
+  --tag-armada: #424242;
+  --tag-fijas: #5d4037;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   PANEL FLOTANTE PRINCIPAL
+   ============================================================ */
+#grafico-flotante {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.96);
+  background: var(--panel-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--panel-shadow);
+  z-index: 2000;
+  width: 1040px;
+  max-height: 88vh;
+  overflow: hidden;
+  font-family: var(--font);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+#grafico-flotante.visible {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+#header-flotante {
+  background: var(--header-bg);
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  cursor: move;
+  flex-shrink: 0;
+  user-select: none;
+  position: relative;
+}
+#header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+#header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#titulo-grafico {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--header-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-icon {
+  font-size: 18px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+#header-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.header-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.18);
+  color: var(--header-text);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.header-tag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-dot 2s infinite;
+}
+.header-tag-dot.online {
+  background: #4caf50;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+#header-coords {
+  font-size: 11px;
+  color: var(--header-secondary);
+  opacity: 0.8;
+}
+#header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+.btn-panel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.15);
+  color: var(--header-text);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background var(--transition);
+}
+.btn-panel:hover {
+  background: rgba(255,255,255,0.30);
+}
+.btn-panel-close {
+  background: rgba(220,53,69,0.5);
+}
+.btn-panel-close:hover {
+  background: rgba(220,53,69,0.8);
+}
+
+/* ============================================================
+   BARRA DE RANGO TEMPORAL
+   ============================================================ */
+#time-range-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: #f0f4f8;
+  border-bottom: 1px solid var(--card-border);
+  flex-wrap: wrap;
+}
+.time-range-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+.time-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 20px;
+  background: white;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.time-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+.time-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.time-btn.custom {
+  border-style: dashed;
+}
+.time-btn.custom.active {
+  border-style: solid;
+}
+
+/* ============================================================
+   CONTENIDO SCROLLABLE
+   ============================================================ */
+#contenido-flotante {
+  overflow-y: auto;
+  max-height: calc(88vh - 130px);
+  padding: 16px 20px 20px;
+  background: #f5f7fa;
+}
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+#contenido-grafico.skeleton-loading {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.skeleton-card {
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.skeleton-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.skeleton-title {
+  width: 110px;
+  height: 14px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+.skeleton-badge {
+  width: 50px;
+  height: 12px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+.skeleton-chart {
+  width: 100%;
+  height: 160px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   CARDS DE GRÁFICOS
+   ============================================================ */
+#contenido-grafico {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.chart-card {
+  background: white;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.chart-card:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-1px);
+}
+.chart-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--card-border);
+}
+.chart-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chart-card-title .var-icon {
+  font-size: 14px;
+}
+.chart-card-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 2px 10px 4px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--card-border);
+}
+.chart-card-stats .stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.chart-card-stats .stat-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.chart-card-stats .stat-label {
+  color: var(--text-muted);
+}
+.chart-card-toolbar {
+  display: flex;
+  gap: 4px;
+}
+.chart-card-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+.chart-card-btn:hover {
+  background: rgba(0,0,0,0.06);
+  color: var(--text-primary);
+}
+.chart-card-body {
+  padding: 4px;
+}
+.chart-card-body > div {
+  width: 100%;
+}
+
+/* ============================================================
+   ESTADOS VACÍO / ERROR
+   ============================================================ */
+.state-empty, .state-error {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: white;
+  border-radius: var(--radius-sm);
+}
+.state-empty .state-icon, .state-error .state-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+.state-empty .state-text {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.state-empty .state-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.state-error .state-text {
+  font-size: 15px;
+  color: var(--danger);
+  margin-bottom: 12px;
+}
+.btn-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 20px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.btn-retry:hover {
+  background: #1557b0;
+}
+
+/* ============================================================
+   RESPONSIVO
+   ============================================================ */
+@media (max-width: 1100px) {
+  #grafico-flotante { width: 96vw; }
+  #contenido-grafico { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  #grafico-flotante { width: 100vw; bottom: 0; border-radius: var(--radius) var(--radius) 0 0; max-height: 92vh; }
+  #contenido-grafico { grid-template-columns: 1fr; gap: 10px; }
+  #header-tags .header-tag.hide-mobile { display: none; }
+  #header-title-row { flex-wrap: nowrap; }
+  #titulo-grafico { font-size: 14px; max-width: 160px; }
+}
+</style>
+
+<!-- ============================================================
+     CONTENEDOR DEL MAPA
+     ============================================================ -->
+<div id="map-container" style="width: 100%; height: 100%; position: absolute;">
+    {{ mapa_html | safe }}
+</div>
+
+<!-- ============================================================
+     PANEL FLOTANTE DE GRÁFICOS (REDISEÑADO)
+     ============================================================ -->
+<div id="grafico-flotante">
+    <!-- HEADER -->
+    <div id="header-flotante">
+        <div id="header-left">
+            <div id="header-title-row">
+                <span class="header-icon">📡</span>
+                <span id="titulo-grafico">Estación</span>
+            </div>
+            <div id="header-tags">
+                <span class="header-tag" id="tag-tipo">🏷️ Tipo</span>
+                <span class="header-tag" id="tag-region">📍 Región</span>
+                <span class="header-tag hide-mobile" id="tag-codigo">#000</span>
+                <span class="header-tag" id="tag-live">
+                    <span class="header-tag-dot online"></span>
+                    En vivo
+                </span>
+            </div>
+            <div id="header-coords"></div>
+        </div>
+        <div id="header-actions">
+            <button class="btn-panel" onclick="toggleTamano()" id="btnAmpliarReducir" title="Ampliar gráficos">⛶</button>
+            <button class="btn-panel btn-panel-close" onclick="cerrarGrafico()" title="Cerrar">&times;</button>
+        </div>
+    </div>
+
+    <!-- BARRA DE RANGO TEMPORAL -->
+    <div id="time-range-bar">
+        <span class="time-range-label">📅 Rango:</span>
+        <button class="time-btn active" data-hours="24" onclick="cambiarRango(24)">24h</button>
+        <button class="time-btn" data-hours="48" onclick="cambiarRango(48)">48h</button>
+        <button class="time-btn" data-hours="72" onclick="cambiarRango(72)">72h</button>
+        <button class="time-btn" data-hours="168" onclick="cambiarRango(168)">7 días</button>
+    </div>
+
+    <!-- CONTENIDO SCROLLABLE -->
+    <div id="contenido-flotante">
+        <div id="contenido-grafico" class="skeleton-loading">
+            <!-- Skeleton cards de ejemplo -->
+            <div class="skeleton-card">
+                <div class="skeleton-card-header">
+                    <div class="skeleton-title"></div>
+                    <div class="skeleton-badge"></div>
+                </div>
+                <div class="skeleton-chart"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-card-header">
+                    <div class="skeleton-title"></div>
+                    <div class="skeleton-badge"></div>
+                </div>
+                <div class="skeleton-chart"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-card-header">
+                    <div class="skeleton-title"></div>
+                    <div class="skeleton-badge"></div>
+                </div>
+                <div class="skeleton-chart"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-card-header">
+                    <div class="skeleton-title"></div>
+                    <div class="skeleton-badge"></div>
+                </div>
+                <div class="skeleton-chart"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-card-header">
+                    <div class="skeleton-title"></div>
+                    <div class="skeleton-badge"></div>
+                </div>
+                <div class="skeleton-chart"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-card-header">
+                    <div class="skeleton-title"></div>
+                    <div class="skeleton-badge"></div>
+                </div>
+                <div class="skeleton-chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     DATOS DE ESTACIONES (inyectados desde el backend)
+     ============================================================ -->
+<script>
+    const ESTACIONES_DATA = {{ estaciones_json | safe }};
+</script>
+
+<!-- ============================================================
+     JAVASCRIPT PRINCIPAL
+     ============================================================ -->
+<script>
+// =============================================================
+// ESTADO GLOBAL
+// =============================================================
+let datosGraficosActuales = null;
+let codigoEstacionActual = null;
+let infoEstacionActual = null;
+let esGrande = false;
+let rangoHorasActual = 72; // default 72h
+let estacionMetaActual = null;
+
+// =============================================================
+// CLICK DIRECTO EN MARCADOR (sin popup intermedio)
+// =============================================================
+function setupMarkerClicks() {
+    // Esperar a que Leaflet termine de cargar
+    const checkInterval = setInterval(function() {
+        const mapContainer = document.querySelector('.folium-map');
+        if (!mapContainer) return;
+        const mapId = mapContainer.id;
+        const map = window[Object.keys(window).find(k => k.startsWith('map_') && k.includes(mapId))];
+        if (!map) return;
+        clearInterval(checkInterval);
+
+        // Escuchar evento popupopen: interceptar y redirigir al panel
+        map.on('popupopen', function(e) {
+            const popupLatLng = e.popup.getLatLng();
+            if (!popupLatLng) return;
+
+            // Buscar la estación más cercana por coordenadas (tolerancia 0.01 grados)
+            const lat = popupLatLng.lat;
+            const lng = popupLatLng.lng;
+            const estacion = ESTACIONES_DATA.find(est => {
+                return Math.abs(est.latitud - lat) < 0.01 &&
+                       Math.abs(est.longitud - lng) < 0.01;
+            });
+
+            if (estacion) {
+                // Cerrar el popup inmediatamente
+                map.closePopup();
+                // Abrir panel directamente
+                abrirPanelDirecto(estacion.codigo, estacion.nombre, estacion.region, estacion.tipo, estacion.latitud, estacion.longitud);
+            }
+        });
+    }, 500);
+}
+
+// =============================================================
+// ABRIR PANEL DIRECTO
+// =============================================================
+function abrirPanelDirecto(codigo, nombre, region, tipo, latitud, longitud) {
+    codigoEstacionActual = codigo;
+    estacionMetaActual = { codigo, nombre, region, tipo, latitud, longitud };
+
+    const panel = document.getElementById('grafico-flotante');
+
+    // Mostrar panel con animación
+    panel.style.display = 'block';
+    // Forzar reflow para que la transición funcione
+    void panel.offsetWidth;
+    panel.classList.add('visible');
+
+    // Actualizar header
+    actualizarHeader(nombre, region, tipo, codigo, latitud, longitud);
+
+    // Reset estado
+    esGrande = false;
+    const btnAmpliar = document.getElementById('btnAmpliarReducir');
+    btnAmpliar.textContent = '⛶';
+    btnAmpliar.setAttribute('title', 'Ampliar gráficos');
+
+    // Mostrar skeleton y cargar datos
+    mostrarSkeleton();
+    rangoHorasActual = 72;
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.time-btn[data-hours="72"]').classList.add('active');
+
+    cargarDatos(codigo, 72);
+}
+
+// =============================================================
+// ACTUALIZAR HEADER
+// =============================================================
+function actualizarHeader(nombre, region, tipo, codigo, latitud, longitud) {
+    document.getElementById('titulo-grafico').textContent = nombre;
+    document.getElementById('tag-region').textContent = `📍 ${region}`;
+    document.getElementById('tag-tipo').textContent = `🏷️ ${tipo}`;
+    document.getElementById('tag-codigo').textContent = `#${codigo}`;
+    document.getElementById('header-coords').textContent = `🌐 ${latitud.toFixed(4)}°S, ${longitud.toFixed(4)}°W`;
+}
+
+// =============================================================
+// MOSTRAR SKELETON
+// =============================================================
+function mostrarSkeleton() {
+    const cont = document.getElementById('contenido-grafico');
+    cont.innerHTML = '';
+    cont.className = 'skeleton-loading';
+    for (let i = 0; i < 6; i++) {
+        const card = document.createElement('div');
+        card.className = 'skeleton-card';
+        card.innerHTML = `
+            <div class="skeleton-card-header">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-badge"></div>
+            </div>
+            <div class="skeleton-chart"></div>
+        `;
+        cont.appendChild(card);
+    }
+}
+
+// =============================================================
+// MOSTRAR ESTADO VACÍO
+// =============================================================
+function mostrarEstadoVacio() {
+    const cont = document.getElementById('contenido-grafico');
+    cont.className = '';
+    cont.innerHTML = `
+        <div class="state-empty">
+            <div class="state-icon">📊</div>
+            <div class="state-text">No hay datos disponibles</div>
+            <div class="state-sub">Esta estación no registra datos en el rango seleccionado</div>
+        </div>
+    `;
+}
+
+// =============================================================
+// MOSTRAR ESTADO ERROR
+// =============================================================
+function mostrarEstadoError(mensaje) {
+    const cont = document.getElementById('contenido-grafico');
+    cont.className = '';
+    cont.innerHTML = `
+        <div class="state-error">
+            <div class="state-icon">⚠️</div>
+            <div class="state-text">${mensaje || 'Error al cargar los datos'}</div>
+            <button class="btn-retry" onclick="reintentarCarga()">
+                ↻ Reintentar
+            </button>
+        </div>
+    `;
+}
+
+// =============================================================
+// REINTENTAR CARGA
+// =============================================================
+function reintentarCarga() {
+    if (codigoEstacionActual) {
+        mostrarSkeleton();
+        cargarDatos(codigoEstacionActual, rangoHorasActual);
+    }
+}
+
+// =============================================================
+// CAMBIAR RANGO TEMPORAL
+// =============================================================
+function cambiarRango(horas) {
+    rangoHorasActual = horas;
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.time-btn[data-hours="${horas}"]`).classList.add('active');
+    if (codigoEstacionActual) {
+        mostrarSkeleton();
+        cargarDatos(codigoEstacionActual, horas);
+    }
+}
+
+// =============================================================
+// CARGAR DATOS DESDE BACKEND
+// =============================================================
+function cargarDatos(codigo_estacion, horas) {
+    const url = `/app/get_est_met/${codigo_estacion}?horas=${horas}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            if (!data.info_estacion || !data.datos_graficos) throw new Error('Datos incompletos');
+
+            datosGraficosActuales = data.datos_graficos;
+            infoEstacionActual = data.info_estacion;
+
+            // Verificar si todos los gráficos están vacíos
+            const variables = Object.keys(data.datos_graficos);
+            const hayDatos = variables.some(v => {
+                const d = data.datos_graficos[v];
+                return d && d.x && d.x.length > 0 && d.y && d.y.some(val => val !== null);
+            });
+
+            if (!hayDatos) {
+                mostrarEstadoVacio();
+                return;
+            }
+
+            renderizarGraficos(data.datos_graficos);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarEstadoError(error.message);
+        });
+}
+
+// =============================================================
+// FUNCIÓN AUXILIAR: MEDIA MÓVIL
+// =============================================================
+function calcularMediaMovil(arr, ventana) {
+    const resultado = [];
+    for (let i = 0; i < arr.length; i++) {
+        let inicio = Math.max(0, i - Math.floor(ventana / 2));
+        let fin = Math.min(arr.length - 1, i + Math.floor(ventana / 2));
+        let count = 0;
+        let sum = 0;
+        for (let j = inicio; j <= fin; j++) {
+            if (arr[j] !== null && arr[j] !== undefined) {
+                sum += arr[j];
+                count++;
+            }
+        }
+        resultado.push(count > 0 ? sum / count : null);
+    }
+    return resultado;
+}
+
+// =============================================================
+// FUNCIÓN AUXILIAR: ESTADÍSTICAS
+// =============================================================
+function calcularEstadisticas(arr) {
+    const validos = arr.filter(v => v !== null && v !== undefined);
+    if (validos.length === 0) return { min: null, max: null, avg: null, ultimo: null };
+    return {
+        min: Math.min(...validos),
+        max: Math.max(...validos),
+        avg: validos.reduce((a, b) => a + b, 0) / validos.length,
+        ultimo: validos[validos.length - 1]
+    };
+}
+
+// =============================================================
+// COLORES POR VARIABLE
+// =============================================================
+const VAR_COLORS = {
+    'Temperatura': '#e74c3c',
+    'Presión': '#2ecc71',
+    'Humedad': '#3498db',
+    'Velocidad del Viento': '#f39c12',
+    'Dirección del Viento': '#9b59b6',
+    'Ráfaga de Velocidad': '#e67e22',
+    'Lluvia': '#1abc9c'
+};
+
+const VAR_ICONS = {
+    'Temperatura': '🌡️',
+    'Presión': '📊',
+    'Humedad': '💧',
+    'Velocidad del Viento': '💨',
+    'Dirección del Viento': '🧭',
+    'Ráfaga de Velocidad': '🌬️',
+    'Lluvia': '☔'
+};
+
+// =============================================================
+// RENDERIZAR GRÁFICOS EN CARDS (MEJORADO)
+// =============================================================
+function renderizarGraficos(datosGraficos) {
+    const cont = document.getElementById('contenido-grafico');
+    cont.className = '';
+    cont.innerHTML = '';
+
+    const variables = Object.keys(datosGraficos);
+    const fechaActual = new Date().toISOString();
+
+    // Filtrar variables con datos
+    const varsConDatos = variables.filter(v => {
+        const d = datosGraficos[v];
+        return d && d.x && d.x.length > 0 && d.y && d.y.some(val => val !== null);
+    });
+
+    // Ajustar grid según cantidad
+    if (varsConDatos.length <= 2) {
+        cont.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    } else {
+        cont.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    }
+
+    variables.forEach((variable, index) => {
+        const datos = datosGraficos[variable];
+        const hayDatos = datos && datos.x && datos.x.length > 0 && datos.y && datos.y.some(val => val !== null);
+
+        const colorPrincipal = VAR_COLORS[variable] || '#1a73e8';
+        const icono = VAR_ICONS[variable] || '📈';
+        const unidad = (datos && datos.unidad) ? datos.unidad : '';
+
+        // Calcular estadísticas
+        let statsHtml = '';
+        if (hayDatos) {
+            const stats = calcularEstadisticas(datos.y);
+            const fmt = (v) => (v !== null && v !== undefined) ? Number(v).toFixed(1) : '—';
+            statsHtml = `
+                <div class="chart-card-stats">
+                    <span class="stat-item">📈 <span class="stat-value">${fmt(stats.ultimo)}</span> <span class="stat-label">actual</span></span>
+                    <span class="stat-item">▲ <span class="stat-value">${fmt(stats.max)}</span> <span class="stat-label">máx</span></span>
+                    <span class="stat-item">▼ <span class="stat-value">${fmt(stats.min)}</span> <span class="stat-label">mín</span></span>
+                    <span class="stat-item">∅ <span class="stat-value">${fmt(stats.avg)}</span> <span class="stat-label">prom</span></span>
+                </div>
+            `;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+        card.id = `card-${index}`;
+
+        card.innerHTML = `
+            <div class="chart-card-header">
+                <span class="chart-card-title">
+                    <span class="var-icon">${icono}</span>
+                    ${variable}
+                    ${unidad ? `<span style="font-weight:400;color:var(--text-muted);font-size:11px;">(${unidad})</span>` : ''}
+                </span>
+                <span class="chart-card-toolbar">
+                    <button class="chart-card-btn" onclick="expandirIndividual('grafico-${index}')" title="Expandir">⛶</button>
+                </span>
+            </div>
+            ${statsHtml}
+            <div class="chart-card-body">
+                <div id="grafico-${index}"></div>
+            </div>
+        `;
+
+        if (!hayDatos) {
+            card.style.display = 'none';
+        }
+
+        cont.appendChild(card);
+
+        if (hayDatos) {
+            // Calcular fecha mínima
+            let fechaMinima = datos.x[0];
+            if (datos.x.length > 0) {
+                const sortedDates = [...datos.x].sort();
+                fechaMinima = sortedDates[0];
+            }
+
+            // Preparar arrays limpiando nulos para media móvil
+            const yClean = datos.y.map(v => v !== null && v !== undefined ? v : null);
+            const xClean = datos.x;
+            const mediaMovil = calcularMediaMovil(yClean, Math.min(7, Math.floor(yClean.length / 3)));
+
+            // Trazo principal: línea + área
+            const tracePrincipal = {
+                x: xClean,
+                y: yClean,
+                type: 'scatter',
+                mode: 'lines',
+                name: variable,
+                line: { color: colorPrincipal, width: 1.8 },
+                fill: 'tozeroy',
+                fillcolor: colorPrincipal + '18',
+                connectgaps: false,
+                hoverinfo: 'x+y',
+                hovertemplate: `<b>%{x}</b><br>${variable}: %{y:.1f} ${unidad}<extra></extra>`
+            };
+
+            // Trazo de marcadores (puntos)
+            const tracePuntos = {
+                x: xClean,
+                y: yClean,
+                type: 'scatter',
+                mode: 'markers',
+                name: 'datos',
+                marker: {
+                    size: 3,
+                    color: colorPrincipal,
+                    opacity: 0.6,
+                    line: { width: 0 }
+                },
+                hoverinfo: 'skip',
+                showlegend: false
+            };
+
+            // Trazo de media móvil (tendencia)
+            const traceMedia = {
+                x: xClean,
+                y: mediaMovil,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Media móvil',
+                line: { color: '#e74c3c', width: 2, dash: '2px,2px' },
+                hoverinfo: 'skip',
+                showlegend: false
+            };
+
+            // Configuración con rangeselector
+            Plotly.newPlot(`grafico-${index}`, [tracePrincipal, tracePuntos, traceMedia], {
+                title: { text: '', font: { size: 0 } },
+                width: null,
+                height: 190,
+                margin: { l: 38, r: 8, t: 5, b: 50 },
+                font: { size: 10, family: 'Segoe UI, system-ui, sans-serif' },
+                autosize: true,
+                showlegend: false,
+                hovermode: 'x unified',
+                paper_bgcolor: 'white',
+                plot_bgcolor: 'white',
+                xaxis: {
+                    tickfont: { size: 9, color: '#888' },
+                    range: [fechaMinima, fechaActual],
+                    showgrid: true,
+                    gridcolor: '#f0f0f0',
+                    zeroline: false,
+                    tickformat: '%d/%m %H:%M',
+                    rangeselector: {
+                        buttons: [
+                            { count: 6, label: '6h', step: 'hour', stepmode: 'backward' },
+                            { count: 12, label: '12h', step: 'hour', stepmode: 'backward' },
+                            { count: 1, label: '1d', step: 'day', stepmode: 'backward' },
+                            { count: 3, label: '3d', step: 'day', stepmode: 'backward' },
+                            { step: 'all', label: 'Todo' }
+                        ],
+                        bgcolor: '#f8f9fa',
+                        activecolor: '#1a73e8',
+                        font: { size: 9, color: '#555' },
+                        x: 0,
+                        y: -0.45,
+                        xanchor: 'left',
+                        yanchor: 'top'
+                    },
+                    rangeslider: { visible: true, thickness: 0.08, bgcolor: '#f0f4f8' }
+                },
+                yaxis: {
+                    tickfont: { size: 9, color: '#888' },
+                    title: { text: unidad, font: { size: 9, color: '#aaa' } },
+                    showgrid: true,
+                    gridcolor: '#f0f0f0',
+                    zeroline: false,
+                    fixedrange: false
+                },
+                dragmode: 'pan',
+                modebar: {
+                    orientation: 'v',
+                    bgcolor: 'rgba(255,255,255,0.8)',
+                    color: '#888',
+                    activecolor: '#1a73e8'
+                }
+            }, {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'select2d', 'autoScale2d']
+            });
+        }
+    });
+
+    // Ajustar según tamaño
+    ajustarTamaño();
+}
+
+// =============================================================
+// EXPANDIR GRÁFICO INDIVIDUAL
+// =============================================================
+function expandirIndividual(id) {
+    const div = document.getElementById(id);
+    if (!div) return;
+    // Al hacer clic en expandir individual, abrimos Plotly en modo fullscreen
+    const plotDiv = div.querySelector('.js-plotly-plot') || div;
+    if (plotDiv && plotDiv._fullData) {
+        Plotly.Plots.resize(plotDiv);
+        // Intentar fullscreen del elemento
+        if (plotDiv.requestFullscreen) {
+            plotDiv.requestFullscreen();
+        } else if (plotDiv.webkitRequestFullscreen) {
+            plotDiv.webkitRequestFullscreen();
+        }
+    }
+}
+
+// =============================================================
+// TOGGLE TAMAÑO (ampliar/reducir todo)
+// =============================================================
+function toggleTamano() {
+    esGrande = !esGrande;
+    const btnAmpliar = document.getElementById('btnAmpliarReducir');
+    if (esGrande) {
+        btnAmpliar.textContent = '⮌';
+        btnAmpliar.setAttribute('title', 'Reducir gráficos');
+    } else {
+        btnAmpliar.textContent = '⛶';
+        btnAmpliar.setAttribute('title', 'Ampliar gráficos');
+    }
+    ajustarTamaño();
+}
+
+// =============================================================
+// AJUSTAR TAMAÑO DE GRÁFICOS
+// =============================================================
+function ajustarTamaño() {
+    const cont = document.getElementById('contenido-grafico');
+    const panel = document.getElementById('grafico-flotante');
+
+    if (esGrande) {
+        const vpWidth = Math.min(window.innerWidth * 0.85, 800);
+        const vpHeight = Math.min(window.innerHeight * 0.75, 600);
+
+        panel.style.width = `${vpWidth + 40}px`;
+        cont.style.gridTemplateColumns = 'repeat(2, 1fr)';
+
+        const graphHeight = (vpHeight - 40) / 2;
+        actualizarAlturaGraficos(graphHeight);
+    } else {
+        const varsConDatos = Object.keys(datosGraficosActuales || {}).length;
+        if (varsConDatos <= 2) {
+            cont.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        } else {
+            cont.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        }
+        panel.style.width = '';
+        actualizarAlturaGraficos(185);
+    }
+}
+
+function actualizarAlturaGraficos(height) {
+    if (!datosGraficosActuales) return;
+    const variables = Object.keys(datosGraficosActuales);
+    variables.forEach((variable, index) => {
+        const div = document.getElementById(`grafico-${index}`);
+        if (div) {
+            Plotly.relayout(`grafico-${index}`, {
+                height: height,
+                'xaxis.tickfont.size': esGrande ? 10 : 9,
+                'yaxis.tickfont.size': esGrande ? 10 : 9
+            });
+        }
+    });
+}
+
+// =============================================================
+// CERRAR GRÁFICO
+// =============================================================
+function cerrarGrafico() {
+    const panel = document.getElementById('grafico-flotante');
+    panel.classList.remove('visible');
+    panel.style.display = 'none';
+    esGrande = false;
+    const btnAmpliar = document.getElementById('btnAmpliarReducir');
+    if (btnAmpliar) {
+        btnAmpliar.textContent = '⛶';
+        btnAmpliar.setAttribute('title', 'Ampliar gráficos');
+    }
+}
+
+// =============================================================
+// COMPATIBILIDAD CON FUNCIÓN ANTIGUA mostrarGrafico()
+// =============================================================
+function mostrarGrafico(codigo_estacion) {
+    // Buscar metadata de la estación
+    const est = ESTACIONES_DATA.find(e => e.codigo === codigo_estacion);
+    if (est) {
+        abrirPanelDirecto(est.codigo, est.nombre, est.region, est.tipo, est.latitud, est.longitud);
+    } else {
+        // Fallback: cargar sin metadata
+        abrirPanelDirecto(codigo_estacion, 'Estación', 'Desconocida', '', 0, 0);
+    }
+}
+
+// =============================================================
+// CERRAR CON TECLA ESCAPE
+// =============================================================
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const panel = document.getElementById('grafico-flotante');
+        if (panel.style.display !== 'none') {
+            cerrarGrafico();
+        }
+    }
+});
+
+// =============================================================
+// DRAG DEL PANEL (preservado desde versión anterior)
+// =============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const dragElement = document.getElementById("grafico-flotante");
+    const dragHeader = document.getElementById("header-flotante");
+
+    if (dragElement && dragHeader) {
+        // Oculto inicial forzado
+        dragElement.style.display = 'none';
+
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+        dragHeader.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            dragElement.style.transition = "none";
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            let newTop = dragElement.offsetTop - pos2;
+            let newLeft = dragElement.offsetLeft - pos1;
+            dragElement.style.top = newTop + "px";
+            dragElement.style.left = newLeft + "px";
+            dragElement.style.transform = "none";
+            dragElement.style.bottom = "auto";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            dragElement.style.transition = "opacity 0.3s ease";
+        }
+
+        // ResizeObserver para redimensionar Plotly
+        const resizeObserver = new ResizeObserver(entries => {
+            const ids = ['contenido-grafico'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const plots = el.querySelectorAll('[id^="grafico-"]');
+                    plots.forEach(p => {
+                        if (window.Plotly && p.children.length > 0) {
+                            try { Plotly.Plots.resize(p); } catch(e) {}
+                        }
+                    });
+                }
+            });
+        });
+        resizeObserver.observe(dragElement);
+    }
+
+    // Inicializar clics en marcadores
+    setupMarkerClicks();
+});
+
+// =============================================================
+// AJUSTE DEL MAPA
+// =============================================================
+window.onload = function() { ajustarMapa(); };
+window.onresize = function() { ajustarMapa(); };
+
+function ajustarMapa() {
+    const mapDiv = document.getElementById('map-container');
+    if (mapDiv && mapDiv._leaflet_map) {
+        mapDiv._leaflet_map.invalidateSize();
+    }
+}
+</script>
+
+<!-- ============================================================
+     SCRIPT FOLIUM MAP EVENTS (preservado)
+     ============================================================ -->
+<script>
+(function() {
+    const mapContainer = document.querySelector('.folium-map');
+    const mapId = mapContainer ? mapContainer.id : null;
+    if (mapId) {
+        const map = window[Object.keys(window).find(key => key.startsWith('map_') && key.includes(mapId))];
+        if (map) {
+            map.on('moveend', () => {
+                const center = map.getCenter();
+                const zoom = map.getZoom();
+                fetch('/app/actualizar_mapa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ center: [center.lat, center.lng], zoom: zoom })
+                })
+                .then(r => r.json())
+                .then(d => console.log('Estado actualizado:', d))
+                .catch(e => console.error('Error:', e));
+            });
+        }
+    }
+})();
+</script>
+{% endblock %}

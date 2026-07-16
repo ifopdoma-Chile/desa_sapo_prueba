@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_028e718731e534fa4a210ac9843ead07 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdn.jsdelivr.net/gh/digidem/leaflet-side-by-side@2.0.0/leaflet-side-by-side.min.js"></script>
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_028e718731e534fa4a210ac9843ead07" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_028e718731e534fa4a210ac9843ead07 = L.map(
+                "map_028e718731e534fa4a210ac9843ead07",
+                {
+                    center: [-27.87, -105.55],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 4,
+  "zoomControl": true,
+  "preferCanvas": false,
+  "minZoom": 3,
+  "maxZoom": 12,
+  "zoomDelta": 0.15,
+  "zoomSnap": 0.15,
+  "wheelPxPerZoomLevel": 250,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_b83eb01224c822ea75b07e94a0f24593 = L.tileLayer(
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+                {
+  "minZoom": 0,
+  "maxZoom": 18,
+  "maxNativeZoom": 18,
+  "noWrap": false,
+  "attribution": "Esri",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_b83eb01224c822ea75b07e94a0f24593.addTo(map_028e718731e534fa4a210ac9843ead07);
+        
+    
+            var macro_element_ac0646935a9d36088b51e9e497d92d1e = L.tileLayer.wms(
+                "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
+                {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Anomalia_temperatura", "opacity": 1.0, "styles": "", "transparent": true, "version": "1.1.0"}
+            );
+        
+    
+            macro_element_ac0646935a9d36088b51e9e497d92d1e.addTo(map_028e718731e534fa4a210ac9843ead07);
+        
+    
+            var macro_element_9317eb035981b67ed0110c51a61d9adf = L.tileLayer.wms(
+                "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
+                {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Anomalia_temperatura", "opacity": 1.0, "styles": "", "transparent": true, "version": "1.1.0"}
+            );
+        
+    
+            macro_element_9317eb035981b67ed0110c51a61d9adf.addTo(map_028e718731e534fa4a210ac9843ead07);
+        
+    
+            var side_by_side_layers_633b40843b77fb71ce111b646e19b209 = L.control.sideBySide(
+                macro_element_9317eb035981b67ed0110c51a61d9adf, macro_element_ac0646935a9d36088b51e9e497d92d1e
+            ).addTo(map_028e718731e534fa4a210ac9843ead07);
+        
+</script>
+</html>

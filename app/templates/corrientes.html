@@ -1,0 +1,196 @@
+   {% extends 'base.html' %}
+
+   {% block content %}
+   <div id="map-container" style="width: 100%; height: 100vh; position: relative; z-index: 1;">
+       {{ mapa_html | safe }}
+   </div>
+{#    <div id="map-container" style="width: 100%; height: 100vh; position: relative; z-index: 1;">#}
+{#    <!-- Usamos un iframe para aislar el contexto de ipyleaflet -->#}
+{#        <iframe#}
+{#            src="{{ url_for('static', filename=map_filename) }}"#}
+{#            style="width: 100%; height: 100%; border: none;"#}
+{#            title="Mapa de Corrientes">#}
+{#        </iframe>#}
+{#    </div>#}
+
+       <script>
+(function() {
+  const mapDiv = document.querySelector('div[id^="map_"]');
+  if (!mapDiv) return;
+
+  const map = window[mapDiv.id];
+  if (!map || typeof L === 'undefined') return;
+
+  const proxyUrl = "/app/proxy_wms_featureinfo";
+  const wmsLayerAluramar = "Ifop_Sapo:Alturamar_v2";
+
+  function getToken() {
+    const match = location.search.match(/(?:\?|&)token=([^\&]+)/i);
+    return match ? match[1] : null;
+  }
+
+  function buildFeatureInfoParams(latlng, layerName) {
+    const point = map.latLngToContainerPoint(latlng, map.getZoom());
+    const size = map.getSize();
+    const bounds = map.getBounds();
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+
+    const params = {
+      SERVICE: 'WMS',
+      REQUEST: 'GetFeatureInfo',
+      VERSION: '1.1.1',
+      SRS: 'EPSG:4326',
+      BBOX: [sw.lng, sw.lat, ne.lng, ne.lat].join(','),
+      WIDTH: size.x,
+      HEIGHT: size.y,
+      LAYERS: layerName,
+      QUERY_LAYERS: layerName,
+      INFO_FORMAT: 'application/json',
+      X: Math.round(point.x),
+      Y: Math.round(point.y)
+    };
+
+    const token = getToken();
+    if (token) params.token = token;
+    return params;
+  }
+
+  function buildQuery(qs) {
+    return Object.entries(qs).map(([k,v]) => k + "=" + encodeURIComponent(v)).join("&");
+  }
+
+  async function consultarAluramar(latlng) {
+    const url = proxyUrl + '?' + buildQuery(buildFeatureInfoParams(latlng, wmsLayerAluramar));
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const json = await resp.json();
+
+      if (!json.features || json.features.length === 0) return null;
+      const props = json.features[0].properties || {};
+
+      // 1) Intentar por nombres comunes (ajusta si conoces el campo real)
+      const candidates = ["Sea level anomaly", "Sea Level Anomaly", "ALTURA", "ssh", "SSH", "value", "VALUE"];
+      for (const k of candidates) {
+        if (props[k] !== undefined && props[k] !== null) {
+          const num = Number(props[k]);
+          return isFinite(num) ? num.toFixed(3) + " cm" : String(props[k]);
+        }
+      }
+
+      // 2) Fallback: primer valor numérico en properties
+      for (const [k, v] of Object.entries(props)) {
+        const num = Number(v);
+        if (isFinite(num)) return num.toFixed(3) + " cm";
+      }
+    } catch (e) {
+      // ignora
+    }
+    return null;
+  }
+
+  function normalizeLng(lng, lo1) {
+    let x = lng;
+    while (x < lo1) x += 360;
+    while (x > lo1 + 360) x -= 360;
+    return x;
+  }
+
+  function getCurrentAtLatLng(latlng) {
+    if (!window.currentData) return null;
+
+    const uData = window.currentData[0];
+    const vData = window.currentData[1];
+
+    const nx = uData.header.nx;
+    const ny = uData.header.ny;
+    const lo1 = uData.header.lo1;
+    const la1 = uData.header.la1;
+    const dx = uData.header.dx;
+    const dy = uData.header.dy;
+
+    const lng = normalizeLng(latlng.lng, lo1);
+
+    const i = Math.floor((lng - lo1) / dx);
+    const j = Math.floor((la1 - latlng.lat) / dy);
+
+    if (i < 0 || i >= nx || j < 0 || j >= ny) return null;
+
+    const index = j * nx + i;
+
+    const u = uData.data[index];
+    const v = vData.data[index];
+
+    if (u == null || v == null) return null;
+
+    const speed = Math.sqrt(u*u + v*v);
+    let direction = Math.atan2(u, v) * (180 / Math.PI);
+    direction = (direction + 360) % 360;
+
+    return { speed, direction };
+  }
+
+  map.on('click', async function(e) {
+    const cur = getCurrentAtLatLng(e.latlng);
+    const aluramar = await consultarAluramar(e.latlng);
+
+    let content = "";
+
+    if (aluramar) {
+      content += "<b>Altura de mar:</b> " + aluramar + "<br>";
+    }
+
+    if (cur) {
+      content += "<b>Corriente:</b><br>";
+      content += "<b>Velocidad:</b> " + cur.speed.toFixed(2) + " m/s<br>";
+      content += "<b>Dirección:</b> " + cur.direction.toFixed(1) + "°";
+    }
+
+    if (content) {
+      L.popup()
+        .setLatLng(e.latlng)
+        .setContent(content)
+        .openOn(map);
+    }
+  });
+
+})();
+</script>
+
+    <script>
+        // Busca el `div` que contiene el mapa generado por Folium
+        const mapContainer = document.querySelector('.folium-map'); // Selecciona el contenedor del mapa
+        const mapId = mapContainer ? mapContainer.id : null; // Obtén el ID del contenedor
+
+        if (mapId) {
+            // Busca la variable global creada para el mapa por su ID
+            const map = window[Object.keys(window).find(key => key.startsWith('map_') && key.includes(mapId))];
+
+            if (map) {
+                // Ahora puedes trabajar con los eventos o configuraciones del mapa
+                map.on('moveend', () => {
+                    const center = map.getCenter();
+                    const zoom = map.getZoom();
+
+                    // Enviar datos actualizados al servidor
+                    fetch('/app/actualizar_mapa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            center: [center.lat, center.lng],
+                            zoom: zoom
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log('Estado actualizado:', data))
+                    .catch(err => console.error('Error al actualizar:', err));
+                });
+            } else {
+                console.error('No se encontró el objeto de mapa generado por Folium');
+            }
+        } else {
+            console.error('No se encontró el contenedor del mapa en el DOM.');
+        }
+    </script>
+   {% endblock %}

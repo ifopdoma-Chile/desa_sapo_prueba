@@ -200,9 +200,20 @@ def fetch_current_from_wcs():
 
         with rasterio.open(BytesIO(resp_u.content)) as src:
             u = src.read(1).astype(np.float64)
+            nodata_u = src.nodata
 
         with rasterio.open(BytesIO(resp_v.content)) as src:
             v = src.read(1).astype(np.float64)
+            nodata_v = src.nodata
+
+        # Limpiar valores nodata (tierra) antes de reducir resolución
+        if nodata_u is not None:
+            u[np.isclose(u, nodata_u)] = 0.0
+        if nodata_v is not None:
+            v[np.isclose(v, nodata_v)] = 0.0
+        # Valores físicamente imposibles para corrientes oceánicas (> 10 m/s)
+        u[np.abs(u) > 10] = 0.0
+        v[np.abs(v) > 10] = 0.0
 
         # Reducir resolución (factor 8 para manejar 4320x2041)
         factor = 8
@@ -505,17 +516,18 @@ def process_wind_file(filename):
             "dx": abs(dx),
             "dy": abs(dy),
             "refTime": ref_time_iso,
-            "forecastTime": 0
+            "forecastTime": 0,
+            "scanMode": 0
         }
 
         u_component = {
             "header": {**header_base, "parameterNumber": 2},
-            "data": np.nan_to_num(u).flatten().tolist()
+            "data": np.nan_to_num(u).T.flatten().tolist()
         }
 
         v_component = {
             "header": {**header_base, "parameterNumber": 3},
-            "data": np.nan_to_num(v).flatten().tolist()
+            "data": np.nan_to_num(v).T.flatten().tolist()
         }
 
         with open(json_path, "w") as f:
@@ -541,7 +553,7 @@ def process_wind_file(filename):
         return None
 
 
-def fetch_wind_from_wcs():
+def fetch_wind_from_wcs_old():
     """Obtiene datos de viento desde GeoServer vía WCS 2.0.1 (GetCoverage en GeoTIFF).
     
     Reemplaza la lectura de archivos NetCDF locales usando las capas publicadas
@@ -715,10 +727,115 @@ def fetch_wind_from_wcs():
         return None, False
 
 
+def fetch_wind_from_wcs():
+    """Obtiene u10 y v10 desde GeoServer via WCS 2.0.1 y genera JSON para leaflet-velocity"""
+    try:
+        app_static = os.path.join(current_app.root_path, 'static')
+        os.makedirs(app_static, exist_ok=True)
+
+        json_path = os.path.join(app_static, 'wind_data_latest.json')
+        metadata_path = os.path.join(app_static, 'wind_metadata.json')
+
+        auth = HTTPBasicAuth(GEOSERVER_USER, GEOSERVER_PASS)
+        wcs_url = f"{GEOSERVER_URL}/Ifop_Sapo/wcs"
+
+        # WCS 2.0.1 con coverageId
+        params_u = {
+            "service": "WCS", "version": "2.0.1", "request": "GetCoverage",
+            "coverageId": "Ifop_Sapo__u10",
+            "format": "image/tiff"
+        }
+        params_v = {
+            "service": "WCS", "version": "2.0.1", "request": "GetCoverage",
+            "coverageId": "Ifop_Sapo__v10",
+            "format": "image/tiff"
+        }
+
+        resp_u = requests.get(wcs_url, params=params_u, auth=auth, timeout=60)
+        resp_u.raise_for_status()
+        resp_v = requests.get(wcs_url, params=params_v, auth=auth, timeout=60)
+        resp_v.raise_for_status()
+
+        with rasterio.open(BytesIO(resp_u.content)) as src:
+            u = src.read(1).astype(np.float64)
+
+        with rasterio.open(BytesIO(resp_v.content)) as src:
+            v = src.read(1).astype(np.float64)
+
+        u = np.nan_to_num(u, nan=0.0)
+        v = np.nan_to_num(v, nan=0.0)
+        u = np.round(u, 3)
+        v = np.round(v, 3)
+
+        ny, nx = u.shape
+
+        with rasterio.open(BytesIO(resp_u.content)) as src_ref:
+            left, bottom, right, top = src_ref.bounds
+        dx = (right - left) / nx
+        dy = (top - bottom) / ny
+
+        ref_time_iso = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        header_base = {
+            "parameterCategory": 2, "nx": nx, "ny": ny,
+            "lo1": left, "la1": top, "lo2": right, "la2": bottom,
+            "dx": abs(dx), "dy": abs(dy),
+            "refTime": ref_time_iso, "forecastTime": 0
+        }
+
+        u_component = {"header": {**header_base, "parameterNumber": 2}, "data": u.flatten().tolist()}
+        v_component = {"header": {**header_base, "parameterNumber": 3}, "data": v.flatten().tolist()}
+
+        with open(json_path, "w") as f:
+            json.dump([u_component, v_component], f, separators=(',', ':'))
+
+        fecha_local = datetime.now(pytz.utc).astimezone(chile_tz)
+        metadata = {
+            "fuente": "WCS GeoServer",
+            "fecha_dato": fecha_local.strftime("%d/%m/%Y %H:%M"),
+            "fecha_proceso": datetime.now().isoformat()
+        }
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f)
+
+        return metadata, True
+
+    except Exception as e:
+        logging.error(f"Error obteniendo datos desde WCS: {e}")
+        return None, False
+    
 def ensure_latest_wind_processed():
-    """Solo WCS desde GeoServer (sin fallback local ni caché)."""
+    """Intenta WCS desde GeoServer, con fallback a archivo NetCDF local."""
     wcs_metadata, wcs_ok = fetch_wind_from_wcs()
-    return wcs_metadata, wcs_ok
+    if wcs_ok and wcs_metadata:
+        logging.info("Viento: datos obtenidos desde WCS GeoServer")
+        return wcs_metadata, wcs_ok
+    
+    logging.warning("Viento: WCS falló, intentando con archivo NetCDF local...")
+    try:
+        filename = get_latest_wind_file()
+        if filename:
+            local_metadata = process_wind_file(filename)
+            if local_metadata:
+                logging.info(f"Viento: datos obtenidos desde archivo local {filename}")
+                return local_metadata, True
+        logging.warning("Viento: no se encontró archivo NetCDF local válido")
+    except Exception as e:
+        logging.error(f"Viento: error en fallback local: {e}")
+    
+    # Si todo falla, devolver metadata previa desde disco si existe
+    try:
+        app_static = os.path.join(current_app.root_path, 'static')
+        metadata_path = os.path.join(app_static, 'wind_metadata.json')
+        if os.path.exists(metadata_path):
+            with open(metadata_path) as f:
+                meta = json.load(f)
+            logging.info("Viento: usando metadata previa del disco")
+            return meta, True
+    except Exception:
+        pass
+    
+    return None, False
 
 def get_wms_date(layer_name="presatm2"):
     try:
@@ -733,7 +850,7 @@ def get_wms_date(layer_name="presatm2"):
             name = layer.find("wms:Name", ns)
             if name is not None and name.text == layer_name:
                 dim = layer.find("wms:Dimension", ns)
-                if dim is not None:
+                if dim is not None and dim.text is not None:
                     raw = dim.text.strip()
                     dt = datetime.strptime(raw, "%Y-%m-%dT%H:%M:%S.%fZ")
                     return dt.strftime("%d/%m/%Y")
@@ -850,7 +967,8 @@ def vientos():
                       displayOptions: {{
                           velocityType: 'Viento',
                           position: 'bottomleft',
-                          emptyString: 'Sin datos'
+                          emptyString: 'Sin datos',
+                          displayBackground: false
                       }},
                       colorScale: ['black','black'],
                   }});

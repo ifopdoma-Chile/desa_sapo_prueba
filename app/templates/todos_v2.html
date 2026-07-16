@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <!-- Contenedor del Mapa -->
+    <div id="map-container" style="width: 100%; height: 100%; position: relative; z-index: 1;">
+        {{ mapa_html | safe }}
+    </div>
+
+     <!-- Recuadro flotante: selector de fecha (bajo/junto a la leyenda) -->
+    <div id="date-box"
+         style="position: absolute;
+                bottom: 120px;  /* ajusta este valor según la altura de la leyenda */
+                right: 20px;
+                background-color: rgba(255,255,255,0.95);
+                border-radius: 10px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                padding: 10px 14px;
+                z-index: 1500;
+                min-width: 230px;
+                max-width: 260px;
+                /*font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;*/
+                backdrop-filter: blur(4px);">
+        <div style="font-size: 13px; font-weight: 600; color: #0d47a1; margin-bottom: 6px;">
+            Fecha de visualización
+        </div>
+
+<!-- Línea con input pequeño + botón -->
+        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <input type="date"
+                   id="fecha-capas"
+                   value="{{ selected_date_str }}"
+                   min="{{ min_date_str }}"
+                   max="{{ today_str }}"
+                   style="flex: 1;
+                          font-size: 11px;
+                          padding: 2px 4px;
+                          height: 24px;
+                          border-radius: 3px;
+                          border: 1px solid #ccc;">
+            <button id="btn-aplicar-fecha"
+                    type="button"
+                    style="font-size: 11px;
+                           padding: 2px 8px;
+                           height: 24px;
+                           border-radius: 3px;
+                           border: none;
+                           background-color: #0d47a1;
+                           color: #fff;
+                           cursor: pointer;">
+                Aplicar
+            </button>
+        </div>
+
+            <small class="text-muted" style="font-size: 11px;">
+                Puede elegir hasta 365 días hacia atrás.
+            </small>
+
+        <!-- Área de mensajes con scroll propio -->
+        <div id="date-status"
+             style="margin-top: 6px;
+                    font-size: 11px;
+                    color: #555;
+                    display: none;
+                    max-height: 70px;      /* alto máximo fijo */
+                    overflow-y: auto;      /* scroll si se excede */
+                    padding-right: 2px;">
+        </div>
+    </div>
+
+ <!-- Overlay global “pensando” -->
+    <div id="global-loading-overlay"
+         style="position: fixed;
+                inset: 0;
+                background: rgba(255,255,255,0.6);
+                backdrop-filter: blur(2px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 2500;">
+        <div style="background: rgba(255,255,255,0.95);
+                    border-radius: 10px;
+                    padding: 12px 18px;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 13px;
+                    color: #0d47a1;">
+            <div class="spinner"
+                 style="width: 18px;
+                        height: 18px;
+                        border-radius: 50%;
+                        border: 2px solid #90caf9;
+                        border-top-color: #0d47a1;
+                        animation: spin 0.8s linear infinite;"></div>
+            <div>
+                Actualizando capas históricas y reiniciando GeoServer…<br>
+                Por favor, espere unos segundos.
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+            <script>
+            // Manejar selección de fecha: botón "Aplicar" llama backend y luego recarga mapa
+            document.addEventListener('DOMContentLoaded', () => {
+                const inputFecha = document.getElementById('fecha-capas');
+                const btnAplicar = document.getElementById('btn-aplicar-fecha');
+                const statusBox = document.getElementById('date-status');
+                const overlay = document.getElementById('global-loading-overlay');
+
+                if (!inputFecha || !btnAplicar) return;
+
+                async function setBusy(busy, mensaje) {
+                    if (busy) {
+                        inputFecha.disabled = true;
+                        btnAplicar.disabled = true;
+                        document.body.style.cursor = 'wait';
+                        if (overlay) overlay.style.display = 'flex';
+                    } else {
+                        inputFecha.disabled = false;
+                        btnAplicar.disabled = false;
+                        document.body.style.cursor = 'default';
+                        if (overlay) overlay.style.display = 'none';
+                    }
+                    if (mensaje) {
+                        statusBox.style.display = 'block';
+                        statusBox.textContent = mensaje.texto;
+                        statusBox.style.color = mensaje.color || '#555';
+                    }
+                }
+
+                btnAplicar.addEventListener('click', async () => {
+                    const fecha = inputFecha.value;
+                    if (!fecha) {
+                        statusBox.style.display = 'block';
+                        statusBox.style.color = '#c62828';
+                        statusBox.textContent = 'Seleccione una fecha válida.';
+                        return;
+                    }
+
+                    await setBusy(true, {
+                        texto: 'Preparando archivos históricos y reiniciando GeoServer…',
+                        color: '#0d47a1'
+                    });
+
+                    try {
+                        const resp = await fetch('{{ url_for("main.todos_v2_fecha") }}', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({fecha})
+                        });
+                        const data = await resp.json();
+
+                        if (!resp.ok || !data.ok) {
+                            throw new Error(data.error || 'Error desconocido');
+                        }
+
+                        // Mostrar información sobre las fechas usadas
+                        statusBox.style.display = 'block';
+                        statusBox.style.color = '#2e7d32';
+
+                        if (data.advertencia && data.advertencia.length > 0) {
+                            // Hay productos con fechas diferentes
+                            let mensaje = '✅ Actualización exitosa.\n\n⚠️ Nota: Algunos productos usan fechas alternativas:\n\n';
+                            data.advertencia.forEach(adv => {
+                                const signo = adv.diferencia_dias > 0 ? '+' : '';
+                                mensaje += `• ${adv.producto}: ${adv.fecha_usada} (${signo}${adv.diferencia_dias} días)\n`;
+                            });
+                            mensaje += '\nRecargando mapa…';
+                            statusBox.textContent = mensaje;
+                            statusBox.style.whiteSpace = 'pre-line';
+                            statusBox.style.color = '#f57c00'; // naranja para advertencia
+                        } else {
+                            // Todas las fechas coinciden
+                            statusBox.textContent = '✅ Actualización exitosa con fecha exacta. Recargando mapa…';
+                        }
+
+                        // Recargar después de 2 segundos para que el usuario vea el mensaje
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+
+                    } catch (err) {
+                        console.error(err);
+                        await setBusy(false, {
+                            texto: 'Error al actualizar: ' + err.message,
+                            color: '#c62828'
+                        });
+                    }
+                });
+            });
+        </script>
+
+<script>
+        // Busca el `div` que contiene el mapa generado por Folium
+        const mapContainer = document.querySelector('.folium-map'); // Selecciona el contenedor del mapa
+        const mapId = mapContainer ? mapContainer.id : null; // Obtén el ID del contenedor
+
+        if (mapId) {
+            // Busca la variable global creada para el mapa por su ID
+            const map = window[Object.keys(window).find(key => key.startsWith('map_') && key.includes(mapId))];
+
+            if (map) {
+                // Ahora puedes trabajar con los eventos o configuraciones del mapa
+                map.on('moveend', () => {
+                    const center = map.getCenter();
+                    const zoom = map.getZoom();
+
+                    // Enviar datos actualizados al servidor
+                    fetch('/app/actualizar_mapa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            center: [center.lat, center.lng],
+                            zoom: zoom
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                         console.log('Estado actualizado:', data);
+                         if (window.showFlash && data.messages) {
+                             window.showFlash(data.messages);
+                         }
+                     })
+                    .catch(err => console.error('Error al actualizar:', err));
+                });
+            } else {
+                console.error('No se encontró el objeto de mapa generado por Folium');
+            }
+        } else {
+            console.error('No se encontró el contenedor del mapa en el DOM.');
+        }
+    </script>
+{% endblock %}

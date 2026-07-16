@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div id="map-container" style="width: 100%; height: 100vh; position: fixed; top: 0; left: 0;">
+        {{ mapa_html | safe }}
+
+    </div>
+<script>
+    (function() {
+      const mapDiv = document.querySelector('div[id^="map_"]');
+      if (!mapDiv) return;
+      const mapId = mapDiv.id;
+      const map = window[mapId];
+      if (!map || typeof L === 'undefined') return;
+
+      const proxyUrl = "/app/proxy_wms_featureinfo";
+      const wmsLayer = "Ifop_Sapo:presatm2";
+
+      function buildFeatureInfoParams(latlng) {
+        const point = map.latLngToContainerPoint(latlng, map.getZoom());
+        const size = map.getSize();
+        const bounds = map.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        const params = {
+          SERVICE: 'WMS',
+          REQUEST: 'GetFeatureInfo',
+          VERSION: '1.1.1',
+          SRS: 'EPSG:4326',
+          BBOX: [sw.lng, sw.lat, ne.lng, ne.lat].join(','),
+          WIDTH: size.x,
+          HEIGHT: size.y,
+          LAYERS: wmsLayer,
+          QUERY_LAYERS: wmsLayer,
+          INFO_FORMAT: 'application/json',
+          X: Math.round(point.x),
+          Y: Math.round(point.y)
+        };
+        return params;
+      }
+
+      function buildQuery(qs) {
+        return Object.entries(qs).map(([k,v]) => k+"="+encodeURIComponent(v)).join("&");
+      }
+
+      async function consultarPresion(latlng) {
+        const url = proxyUrl + '?' + buildQuery(buildFeatureInfoParams(latlng));
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          const json = await resp.json();
+          if (
+            json.features &&
+            json.features.length > 0 &&
+            json.features[0].properties &&
+            json.features[0].properties.MSLP !== undefined
+          ) {
+            const val = json.features[0].properties.MSLP;
+            const num = Number(val);
+            if (num!== 0) return isFinite(num) ? (num.toFixed(2) + ' hPa') : String(val);
+          }
+        } catch(e) {
+        }
+        return null;
+      }
+        function getWindAtLatLng(latlng) {
+
+            if (!window.windData) return null;
+
+            const uData = window.windData[0];
+            const vData = window.windData[1];
+
+            const nx = uData.header.nx;
+            const ny = uData.header.ny;
+            const lo1 = uData.header.lo1;
+            const la1 = uData.header.la1;
+            const dx = uData.header.dx;
+            const dy = uData.header.dy;
+
+            const i = Math.floor((latlng.lng - lo1) / dx);
+            const j = Math.floor((la1 - latlng.lat) / dy);
+
+            if (i < 0 || i >= nx || j < 0 || j >= ny) return null;
+
+            const index = j * nx + i;
+
+            const u = uData.data[index];
+            const v = vData.data[index];
+
+            if (u == null || v == null) return null;
+
+            const speed = Math.sqrt(u*u + v*v);
+
+            let direction = Math.atan2(u, v) * (180 / Math.PI);
+            direction = (direction + 360) % 360;
+
+            return {
+                speed: speed,
+                direction: direction
+            };
+        }
+
+      map.on('click', async function(e) {
+
+            const presion = await consultarPresion(e.latlng);
+            const wind = getWindAtLatLng(e.latlng);
+
+            let content = "";
+
+            if (presion) {
+                content += "<b>Presión:</b> " + presion + "<br>";
+            }
+
+            if (wind) {
+                content += "<b>Viento:</b> "+ "<br>" ;
+                content += "<b>Velocidad:</b> " + wind.speed.toFixed(2) + " m/s<br>";
+                content += "<b>Dirección:</b> " + wind.direction.toFixed(1) + "°";
+            }
+
+            if (content !== "") {
+                L.popup()
+                  .setLatLng(e.latlng)
+                  .setContent(content)
+                  .openOn(map);
+            }
+        });
+
+    })();
+
+        const mapContainer = document.querySelector('.folium-map');
+        const mapId2 = mapContainer ? mapContainer.id : null;
+
+        if (mapId2) {
+            const map2 = window[Object.keys(window).find(key => key.startsWith('map_') && key.includes(mapId2))];
+
+            if (map2) {
+                map2.on('moveend', () => {
+                    const center = map2.getCenter();
+                    const zoom = map2.getZoom();
+
+                    fetch('/app/actualizar_mapa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            center: [center.lat, center.lng],
+                            zoom: zoom
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log('Estado actualizado:', data))
+                    .catch(err => console.error('Error al actualizar:', err));
+                });
+            } else {
+                console.error('No se encontró el objeto de mapa generado por Folium');
+            }
+        } else {
+            console.error('No se encontró el contenedor del mapa en el DOM.');
+        }
+
+    </script>
+
+{% endblock %}
