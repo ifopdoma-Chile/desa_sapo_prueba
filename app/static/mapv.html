@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_d6ae5ee128a62259c088d16e585ada9a {
+                #map_6c4b4ec6c6b89414edb84dc7b27ed802 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -58,14 +58,14 @@
 <body>
     
     
-            <div class="folium-map" id="map_d6ae5ee128a62259c088d16e585ada9a" ></div>
+            <div class="folium-map" id="map_6c4b4ec6c6b89414edb84dc7b27ed802" ></div>
         
 </body>
 <script>
     
     
-            var map_d6ae5ee128a62259c088d16e585ada9a = L.map(
-                "map_d6ae5ee128a62259c088d16e585ada9a",
+            var map_6c4b4ec6c6b89414edb84dc7b27ed802 = L.map(
+                "map_6c4b4ec6c6b89414edb84dc7b27ed802",
                 {
                     center: [-27.87, -105.55],
                     crs: L.CRS.EPSG3857,
@@ -87,7 +87,7 @@
 
         
     
-            var tile_layer_7c280102a79ad31d507abae22b7e3cfa = L.tileLayer(
+            var tile_layer_b1f1dca5b37603bdd64ab085098aeab3 = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -104,10 +104,10 @@
             );
         
     
-            tile_layer_7c280102a79ad31d507abae22b7e3cfa.addTo(map_d6ae5ee128a62259c088d16e585ada9a);
+            tile_layer_b1f1dca5b37603bdd64ab085098aeab3.addTo(map_6c4b4ec6c6b89414edb84dc7b27ed802);
         
     
-            var mouse_position_f427af778172e11e33b578776595ef73 = new L.Control.MousePosition(
+            var mouse_position_efc2c3758095d309ccee0b1ae09bdd40 = new L.Control.MousePosition(
                 {
   "position": "bottomleft",
   "separator": " | ",
@@ -118,35 +118,35 @@
   "formatter": "\n            function(lat, lng) {\n                // Si la longitud es positiva pero estamos en la \"copia\" de la izquierda\n                var virtual_lng = lng;\n                if (lng \u003e 0 \u0026\u0026 map.getCenter().lng \u003c -100) { virtual_lng = lng - 360; }\n                return `Lat: ${lat.toFixed(5)}, Lng: ${virtual_lng.toFixed(5)}`;\n            }\n            ",
 }
             );
-            mouse_position_f427af778172e11e33b578776595ef73.options["latFormatter"] =
+            mouse_position_efc2c3758095d309ccee0b1ae09bdd40.options["latFormatter"] =
                 undefined;
-            mouse_position_f427af778172e11e33b578776595ef73.options["lngFormatter"] =
+            mouse_position_efc2c3758095d309ccee0b1ae09bdd40.options["lngFormatter"] =
                 undefined;
-            map_d6ae5ee128a62259c088d16e585ada9a.addControl(mouse_position_f427af778172e11e33b578776595ef73);
+            map_6c4b4ec6c6b89414edb84dc7b27ed802.addControl(mouse_position_efc2c3758095d309ccee0b1ae09bdd40);
         
     
-            var locate_control_057a8c644a704729f78c5cacb22ae168 = L.control.locate(
+            var locate_control_b497c1c315e54577abdd877d010d571a = L.control.locate(
                 {"position": "bottomleft"}
-            ).addTo(map_d6ae5ee128a62259c088d16e585ada9a);
+            ).addTo(map_6c4b4ec6c6b89414edb84dc7b27ed802);
             
         
     
-            var macro_element_8256d2b0de97ba2aa329a52fd4d440ba = L.tileLayer.wms(
+            var macro_element_b3da91cb77182342729fb7134d649876 = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:presatm2", "noWrap": true, "opacity": 0.5, "styles": "", "tileSize": 256, "transparent": true, "version": "1.1.1"}
             );
         
     
-            macro_element_8256d2b0de97ba2aa329a52fd4d440ba.addTo(map_d6ae5ee128a62259c088d16e585ada9a);
+            macro_element_b3da91cb77182342729fb7134d649876.addTo(map_6c4b4ec6c6b89414edb84dc7b27ed802);
         
     
-            var macro_element_d42943e601ca5fdaa65147726f24f39d = L.tileLayer.wms(
+            var macro_element_89f6f70ec96bcc9a4af2f88e966cdccd = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:presatm2", "noWrap": true, "opacity": 1.0, "styles": "6_presatm_iso", "tileSize": 256, "transparent": true, "version": "1.1.1"}
             );
         
     
-            macro_element_d42943e601ca5fdaa65147726f24f39d.addTo(map_d6ae5ee128a62259c088d16e585ada9a);
+            macro_element_89f6f70ec96bcc9a4af2f88e966cdccd.addTo(map_6c4b4ec6c6b89414edb84dc7b27ed802);
         
 </script>
 </html>

@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_028e718731e534fa4a210ac9843ead07 {
+                #map_a99b11cc525aff05f80c265bdbfbee39 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -55,14 +55,14 @@
 <body>
     
     
-            <div class="folium-map" id="map_028e718731e534fa4a210ac9843ead07" ></div>
+            <div class="folium-map" id="map_a99b11cc525aff05f80c265bdbfbee39" ></div>
         
 </body>
 <script>
     
     
-            var map_028e718731e534fa4a210ac9843ead07 = L.map(
-                "map_028e718731e534fa4a210ac9843ead07",
+            var map_a99b11cc525aff05f80c265bdbfbee39 = L.map(
+                "map_a99b11cc525aff05f80c265bdbfbee39",
                 {
                     center: [-27.87, -105.55],
                     crs: L.CRS.EPSG3857,
@@ -84,7 +84,7 @@
 
         
     
-            var tile_layer_b83eb01224c822ea75b07e94a0f24593 = L.tileLayer(
+            var tile_layer_7609b7a417e7dba77d75a5e96026b49e = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -101,30 +101,30 @@
             );
         
     
-            tile_layer_b83eb01224c822ea75b07e94a0f24593.addTo(map_028e718731e534fa4a210ac9843ead07);
+            tile_layer_7609b7a417e7dba77d75a5e96026b49e.addTo(map_a99b11cc525aff05f80c265bdbfbee39);
         
     
-            var macro_element_ac0646935a9d36088b51e9e497d92d1e = L.tileLayer.wms(
+            var macro_element_45f6050a558b4c69005354ec24f7de84 = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Anomalia_temperatura", "opacity": 1.0, "styles": "", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_ac0646935a9d36088b51e9e497d92d1e.addTo(map_028e718731e534fa4a210ac9843ead07);
+            macro_element_45f6050a558b4c69005354ec24f7de84.addTo(map_a99b11cc525aff05f80c265bdbfbee39);
         
     
-            var macro_element_9317eb035981b67ed0110c51a61d9adf = L.tileLayer.wms(
+            var macro_element_94a80bcdd514006fdce533b16cc89acc = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Anomalia_temperatura", "opacity": 1.0, "styles": "", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_9317eb035981b67ed0110c51a61d9adf.addTo(map_028e718731e534fa4a210ac9843ead07);
+            macro_element_94a80bcdd514006fdce533b16cc89acc.addTo(map_a99b11cc525aff05f80c265bdbfbee39);
         
     
-            var side_by_side_layers_633b40843b77fb71ce111b646e19b209 = L.control.sideBySide(
-                macro_element_9317eb035981b67ed0110c51a61d9adf, macro_element_ac0646935a9d36088b51e9e497d92d1e
-            ).addTo(map_028e718731e534fa4a210ac9843ead07);
+            var side_by_side_layers_4a82b488c3ec918563edfbcf87a50f5e = L.control.sideBySide(
+                macro_element_94a80bcdd514006fdce533b16cc89acc, macro_element_45f6050a558b4c69005354ec24f7de84
+            ).addTo(map_a99b11cc525aff05f80c265bdbfbee39);
         
 </script>
 </html>

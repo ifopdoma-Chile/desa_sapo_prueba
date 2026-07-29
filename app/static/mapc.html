@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_cf59f5c8804a34096d9785e351e37f96 {
+                #map_2533390e3a9c4631e168c512cca74077 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -58,19 +58,19 @@
 <body>
     
     
-            <div class="folium-map" id="map_cf59f5c8804a34096d9785e351e37f96" ></div>
+            <div class="folium-map" id="map_2533390e3a9c4631e168c512cca74077" ></div>
         
 </body>
 <script>
     
     
-            var map_cf59f5c8804a34096d9785e351e37f96 = L.map(
-                "map_cf59f5c8804a34096d9785e351e37f96",
+            var map_2533390e3a9c4631e168c512cca74077 = L.map(
+                "map_2533390e3a9c4631e168c512cca74077",
                 {
-                    center: [-14.519780046326085, -106.72119140625001],
+                    center: [-27.87, -105.55],
                     crs: L.CRS.EPSG3857,
                     ...{
-  "zoom": 5,
+  "zoom": 4,
   "zoomControl": true,
   "preferCanvas": false,
   "minZoom": 3,
@@ -87,7 +87,7 @@
 
         
     
-            var tile_layer_9b4bf0104d6d28f3f34015f83bd9160e = L.tileLayer(
+            var tile_layer_7cf1ac7279102cc1074040b5b234b7c4 = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -104,10 +104,10 @@
             );
         
     
-            tile_layer_9b4bf0104d6d28f3f34015f83bd9160e.addTo(map_cf59f5c8804a34096d9785e351e37f96);
+            tile_layer_7cf1ac7279102cc1074040b5b234b7c4.addTo(map_2533390e3a9c4631e168c512cca74077);
         
     
-            var mouse_position_3d306543b4a876eb363f39f6ca90ea9e = new L.Control.MousePosition(
+            var mouse_position_f83d54c4bd872517a95ec1437835916a = new L.Control.MousePosition(
                 {
   "position": "bottomleft",
   "separator": " | ",
@@ -117,35 +117,35 @@
   "prefix": "Coordenadas:",
 }
             );
-            mouse_position_3d306543b4a876eb363f39f6ca90ea9e.options["latFormatter"] =
+            mouse_position_f83d54c4bd872517a95ec1437835916a.options["latFormatter"] =
                 undefined;
-            mouse_position_3d306543b4a876eb363f39f6ca90ea9e.options["lngFormatter"] =
+            mouse_position_f83d54c4bd872517a95ec1437835916a.options["lngFormatter"] =
                 undefined;
-            map_cf59f5c8804a34096d9785e351e37f96.addControl(mouse_position_3d306543b4a876eb363f39f6ca90ea9e);
+            map_2533390e3a9c4631e168c512cca74077.addControl(mouse_position_f83d54c4bd872517a95ec1437835916a);
         
     
-            var locate_control_dc7253367894142fd4f122929b86e50a = L.control.locate(
+            var locate_control_a3c681d94c0b47c7c7ceeeeebe61568f = L.control.locate(
                 {"position": "bottomleft"}
-            ).addTo(map_cf59f5c8804a34096d9785e351e37f96);
+            ).addTo(map_2533390e3a9c4631e168c512cca74077);
             
         
     
-            var macro_element_c53a6f2bdbfe89385238e8f70e158ec9 = L.tileLayer.wms(
+            var macro_element_6328f6d0908e090fe8381dd4e06aaa85 = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Alturamar_v2", "noWrap": true, "opacity": 0.6, "styles": "", "tileSize": 256, "transparent": true, "version": "1.1.1"}
             );
         
     
-            macro_element_c53a6f2bdbfe89385238e8f70e158ec9.addTo(map_cf59f5c8804a34096d9785e351e37f96);
+            macro_element_6328f6d0908e090fe8381dd4e06aaa85.addTo(map_2533390e3a9c4631e168c512cca74077);
         
     
-            var macro_element_7d263b08603e509836972082a6412ff9 = L.tileLayer.wms(
+            var macro_element_297f1bd06819ca21718e86ac067ff6d5 = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Alturamar_v2", "noWrap": true, "opacity": 1.0, "styles": "7_alturamar_iso", "tileSize": 256, "transparent": true, "version": "1.1.1"}
             );
         
     
-            macro_element_7d263b08603e509836972082a6412ff9.addTo(map_cf59f5c8804a34096d9785e351e37f96);
+            macro_element_297f1bd06819ca21718e86ac067ff6d5.addTo(map_2533390e3a9c4631e168c512cca74077);
         
 </script>
 </html>

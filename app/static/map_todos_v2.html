@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_668b184f48a15b550abe8bc8248ae7bb {
+                #map_0786179814a3f3f33864cac91a599b12 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -60,19 +60,19 @@
 <body>
     
     
-            <div class="folium-map" id="map_668b184f48a15b550abe8bc8248ae7bb" ></div>
+            <div class="folium-map" id="map_0786179814a3f3f33864cac91a599b12" ></div>
         
 </body>
 <script>
     
     
-            var map_668b184f48a15b550abe8bc8248ae7bb = L.map(
-                "map_668b184f48a15b550abe8bc8248ae7bb",
+            var map_0786179814a3f3f33864cac91a599b12 = L.map(
+                "map_0786179814a3f3f33864cac91a599b12",
                 {
-                    center: [-30.06581441113061, -101.5055618091652],
+                    center: [-27.87, -105.55],
                     crs: L.CRS.EPSG3857,
                     ...{
-  "zoom": 3.4499999999999997,
+  "zoom": 4,
   "zoomControl": true,
   "preferCanvas": false,
   "minZoom": 3,
@@ -89,7 +89,7 @@
 
         
     
-            var mouse_position_03c8ed2439c4392779bfc3a307ea7038 = new L.Control.MousePosition(
+            var mouse_position_a6a99b3385e707165802e4fc5dcde8b5 = new L.Control.MousePosition(
                 {
   "position": "bottomleft",
   "separator": " | ",
@@ -100,14 +100,14 @@
   "formatter": "function(lat, lng) {return `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;}",
 }
             );
-            mouse_position_03c8ed2439c4392779bfc3a307ea7038.options["latFormatter"] =
+            mouse_position_a6a99b3385e707165802e4fc5dcde8b5.options["latFormatter"] =
                 undefined;
-            mouse_position_03c8ed2439c4392779bfc3a307ea7038.options["lngFormatter"] =
+            mouse_position_a6a99b3385e707165802e4fc5dcde8b5.options["lngFormatter"] =
                 undefined;
-            map_668b184f48a15b550abe8bc8248ae7bb.addControl(mouse_position_03c8ed2439c4392779bfc3a307ea7038);
+            map_0786179814a3f3f33864cac91a599b12.addControl(mouse_position_a6a99b3385e707165802e4fc5dcde8b5);
         
     
-            var measure_control_da6cc847321eec094bc6ac25c9a4e785 = new L.Control.Measure(
+            var measure_control_39c193887c0f16cb526a778318877bea = new L.Control.Measure(
                 {
   "position": "topleft",
   "primaryLengthUnit": "kilometers",
@@ -115,7 +115,7 @@
   "primaryAreaUnit": "sqkilometers",
   "secondaryAreaUnit": "sqmeters",
 });
-            map_668b184f48a15b550abe8bc8248ae7bb.addControl(measure_control_da6cc847321eec094bc6ac25c9a4e785);
+            map_0786179814a3f3f33864cac91a599b12.addControl(measure_control_39c193887c0f16cb526a778318877bea);
 
             // Workaround for using this plugin with Leaflet>=1.8.0
             // https://github.com/ljagis/leaflet-measure/issues/171
@@ -134,7 +134,7 @@
 
         
     
-            var tile_layer_9d8cdeba947519ef90c58ec3cf3adc14 = L.tileLayer(
+            var tile_layer_16681f0fec6c039e6ba5ffb16b3605ec = L.tileLayer(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
                 {
   "minZoom": 0,
@@ -151,90 +151,90 @@
             );
         
     
-            tile_layer_9d8cdeba947519ef90c58ec3cf3adc14.addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            tile_layer_16681f0fec6c039e6ba5ffb16b3605ec.addTo(map_0786179814a3f3f33864cac91a599b12);
         
     
-            var locate_control_aed63421554f64ae264b7cd5adc102b7 = L.control.locate(
+            var locate_control_801a7db79dd7124cc1372c29f03fd39d = L.control.locate(
                 {}
-            ).addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            ).addTo(map_0786179814a3f3f33864cac91a599b12);
             
         
     
-            var macro_element_4a5d49a3db6cef5b945d9cf89181711e = L.tileLayer.wms(
+            var macro_element_fa36296f28eeb02fbd8e03f206b5aee9 = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Anomalia_temperatura_temp", "opacity": 1.0, "styles": "", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_4a5d49a3db6cef5b945d9cf89181711e.addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            macro_element_fa36296f28eeb02fbd8e03f206b5aee9.addTo(map_0786179814a3f3f33864cac91a599b12);
         
     
-            var macro_element_2c3c675a01d161490f1b3de8e8f2cacd = L.tileLayer.wms(
+            var macro_element_abb1c1cb591658f7e4053cb38d1a67cb = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Anomalia_temperatura_temp", "opacity": 1.0, "styles": "2_isolineas_atsm", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_2c3c675a01d161490f1b3de8e8f2cacd.addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            macro_element_abb1c1cb591658f7e4053cb38d1a67cb.addTo(map_0786179814a3f3f33864cac91a599b12);
         
     
-            var macro_element_6f8405f74e39747745e1941ea04d228a = L.tileLayer.wms(
+            var macro_element_ba29274e3b70b74949f688ededf2164e = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Temperatura_temp", "opacity": 1.0, "styles": "", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_6f8405f74e39747745e1941ea04d228a.addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            macro_element_ba29274e3b70b74949f688ededf2164e.addTo(map_0786179814a3f3f33864cac91a599b12);
         
     
-            var macro_element_37d7d3d394c2c82ceffa5ff131a34a26 = L.tileLayer.wms(
+            var macro_element_1b68cd6b7b3ee593cd9b6e6a4fc949a6 = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Temperatura_temp", "opacity": 1.0, "styles": "1_isolineas_tsm", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_37d7d3d394c2c82ceffa5ff131a34a26.addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            macro_element_1b68cd6b7b3ee593cd9b6e6a4fc949a6.addTo(map_0786179814a3f3f33864cac91a599b12);
         
     
-            var macro_element_4dbe2368840cc99b78879fc61682311a = L.tileLayer.wms(
+            var macro_element_6b069f21e151083c78bba81b62bcc9ce = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Clorofila_temp", "opacity": 1.0, "styles": "", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_4dbe2368840cc99b78879fc61682311a.addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            macro_element_6b069f21e151083c78bba81b62bcc9ce.addTo(map_0786179814a3f3f33864cac91a599b12);
         
     
-            var macro_element_5fc2eae12dcdf57673dc10f466702225 = L.tileLayer.wms(
+            var macro_element_7ad0a3437599151de2b0dcd22aba4f45 = L.tileLayer.wms(
                 "https://gis-eco.ifop.cl/geoserver/Ifop_Sapo/wms?",
                 {"attribution": "", "format": "image/png", "layers": "Ifop_Sapo:Clorofila_temp", "opacity": 1.0, "styles": "3_isolineas_clo", "transparent": true, "version": "1.1.0"}
             );
         
     
-            macro_element_5fc2eae12dcdf57673dc10f466702225.addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            macro_element_7ad0a3437599151de2b0dcd22aba4f45.addTo(map_0786179814a3f3f33864cac91a599b12);
         
     
-            var layer_control_b32bc134b86d9634a2e03db436f7741b_layers = {
+            var layer_control_8328959ec0267db22c97cd4926618599_layers = {
                 base_layers : {
                 },
                 overlays :  {
-                    "Anomal\u00eda de Temperatura" : macro_element_4a5d49a3db6cef5b945d9cf89181711e,
-                    "Isol\u00edneas de ATSM" : macro_element_2c3c675a01d161490f1b3de8e8f2cacd,
-                    "Temperatura" : macro_element_6f8405f74e39747745e1941ea04d228a,
-                    "Isol\u00edneas de TSM" : macro_element_37d7d3d394c2c82ceffa5ff131a34a26,
-                    "Clorofila" : macro_element_4dbe2368840cc99b78879fc61682311a,
-                    "Isol\u00edneas de Clorofila" : macro_element_5fc2eae12dcdf57673dc10f466702225,
+                    "Anomal\u00eda de Temperatura" : macro_element_fa36296f28eeb02fbd8e03f206b5aee9,
+                    "Isol\u00edneas de ATSM" : macro_element_abb1c1cb591658f7e4053cb38d1a67cb,
+                    "Temperatura" : macro_element_ba29274e3b70b74949f688ededf2164e,
+                    "Isol\u00edneas de TSM" : macro_element_1b68cd6b7b3ee593cd9b6e6a4fc949a6,
+                    "Clorofila" : macro_element_6b069f21e151083c78bba81b62bcc9ce,
+                    "Isol\u00edneas de Clorofila" : macro_element_7ad0a3437599151de2b0dcd22aba4f45,
                 },
             };
-            let layer_control_b32bc134b86d9634a2e03db436f7741b = L.control.layers(
-                layer_control_b32bc134b86d9634a2e03db436f7741b_layers.base_layers,
-                layer_control_b32bc134b86d9634a2e03db436f7741b_layers.overlays,
+            let layer_control_8328959ec0267db22c97cd4926618599 = L.control.layers(
+                layer_control_8328959ec0267db22c97cd4926618599_layers.base_layers,
+                layer_control_8328959ec0267db22c97cd4926618599_layers.overlays,
                 {
   "position": "topright",
   "collapsed": false,
   "autoZIndex": true,
 }
-            ).addTo(map_668b184f48a15b550abe8bc8248ae7bb);
+            ).addTo(map_0786179814a3f3f33864cac91a599b12);
 
         
 </script>
