@@ -37,6 +37,207 @@
 }
 
 /* ============================================================
+   LEYENDA CIENTÍFICA INTERACTIVA
+   ============================================================ */
+#legend-colors {
+  position: relative;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--panel-shadow);
+  font-family: var(--font);
+  width: 100%;
+  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+#legend-colors .legend-header {
+  background: var(--header-bg);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+}
+#legend-colors .legend-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--header-text);
+  letter-spacing: 0.3px;
+}
+#legend-colors .legend-title svg {
+  width: 14px; height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+#legend-colors .legend-btn-all {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.12);
+  color: var(--header-text);
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+#legend-colors .legend-btn-all:hover {
+  background: rgba(255,255,255,0.25);
+}
+#legend-colors .legend-items {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+}
+#legend-colors .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 0;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.25s;
+  position: relative;
+  min-height: 32px;
+}
+#legend-colors .legend-item:hover {
+  background: var(--primary-light);
+}
+#legend-colors .legend-item.hidden {
+  opacity: 0.35;
+}
+#legend-colors .legend-item.hidden .legend-name {
+  text-decoration: line-through;
+}
+#legend-colors .legend-bar {
+  flex-shrink: 0;
+  width: 4px;
+  height: 24px;
+  border-radius: 0 2px 2px 0;
+  transition: opacity 0.25s;
+}
+#legend-colors .legend-item.hidden .legend-bar {
+  opacity: 0.3;
+}
+#legend-colors .legend-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.8);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  transition: transform 0.2s, opacity 0.25s;
+}
+#legend-colors .legend-item:hover .legend-dot {
+  transform: scale(1.25);
+}
+#legend-colors .legend-item.hidden .legend-dot {
+  transform: scale(0.8);
+  opacity: 0.4;
+}
+#legend-colors .legend-name {
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.25s;
+}
+#legend-colors .legend-item.hidden .legend-name {
+  color: var(--text-muted);
+}
+#legend-colors .legend-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  padding: 1px 6px;
+  border-radius: 8px;
+  min-width: 20px;
+  text-align: center;
+  transition: all 0.25s;
+}
+#legend-colors .legend-item.hidden .legend-count {
+  background: transparent;
+  color: var(--text-muted);
+}
+#legend-colors .legend-eye {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 0;
+}
+#legend-colors .legend-eye:hover {
+  background: rgba(0,0,0,0.06);
+  color: var(--text-primary);
+}
+#legend-colors .legend-eye svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: all 0.25s;
+}
+#legend-colors .legend-item.hidden .legend-eye svg {
+  stroke: var(--danger);
+}
+#legend-colors .legend-separator {
+  height: 1px;
+  margin: 2px 12px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--card-border) 0,
+    var(--card-border) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+#legend-colors .legend-footer {
+  padding: 6px 14px;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--card-border);
+  text-align: center;
+  flex-shrink: 0;
+  background: var(--card-bg);
+}
+#legend-colors .legend-items::-webkit-scrollbar {
+  width: 4px;
+}
+#legend-colors .legend-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+#legend-colors .legend-items::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 2px;
+}
+
+/* ============================================================
    PANEL FLOTANTE PRINCIPAL
    ============================================================ */
 #grafico-flotante {
@@ -357,7 +558,7 @@
   color: var(--text-primary);
 }
 .chart-card-body {
-  padding: 4px;
+  padding: 2px;
 }
 .chart-card-body > div {
   width: 100%;
@@ -550,34 +751,55 @@ let estacionMetaActual = null;
 // =============================================================
 function setupMarkerClicks() {
     // Esperar a que Leaflet termine de cargar
-    const checkInterval = setInterval(function() {
-        const mapContainer = document.querySelector('.folium-map');
+    var checkInterval = setInterval(function() {
+        var mapContainer = document.querySelector('.folium-map');
         if (!mapContainer) return;
-        const mapId = mapContainer.id;
-        const map = window[Object.keys(window).find(k => k.startsWith('map_') && k.includes(mapId))];
+        var mapId = mapContainer.id;
+        // El ID (map_xxx) ya es la clave en window, usarlo directamente
+        var map = window[mapId];
         if (!map) return;
         clearInterval(checkInterval);
 
-        // Escuchar evento popupopen: interceptar y redirigir al panel
-        map.on('popupopen', function(e) {
-            const popupLatLng = e.popup.getLatLng();
-            if (!popupLatLng) return;
-
-            // Buscar la estación más cercana por coordenadas (tolerancia 0.01 grados)
-            const lat = popupLatLng.lat;
-            const lng = popupLatLng.lng;
-            const estacion = ESTACIONES_DATA.find(est => {
-                return Math.abs(est.latitud - lat) < 0.01 &&
-                       Math.abs(est.longitud - lng) < 0.01;
+        // Recorrer todas las capas del mapa usando el sistema nativo de Leaflet
+        // (sin popups, evitando el error _guiEditing en estaciones NDBC)
+        try {
+            map.eachLayer(function(layer) {
+                // Las FeatureGroups contienen los CircleMarkers
+                if (typeof layer.eachLayer === 'function') {
+                    layer.eachLayer(function(subLayer) {
+                        // Verificar si es un CircleMarker con nuestro className
+                        if (subLayer instanceof L.CircleMarker) {
+                            var match = subLayer.options && subLayer.options.className ?
+                                subLayer.options.className.match(/estacion-marker-(\d+)/) : null;
+                            if (match) {
+                                var codigo = parseInt(match[1]);
+                                // Agregar click handler nativo de Leaflet
+                                subLayer.on('click', function(clickEvent) {
+                                    // Prevenir propagación al mapa y comportamiento por defecto
+                                    L.DomEvent.stopPropagation(clickEvent);
+                                    L.DomEvent.preventDefault(clickEvent);
+                                    var estacion = ESTACIONES_DATA.find(function(e) {
+                                        return e.codigo === codigo;
+                                    });
+                                    if (estacion) {
+                                        abrirPanelDirecto(
+                                            estacion.codigo,
+                                            estacion.nombre,
+                                            estacion.region,
+                                            estacion.tipo,
+                                            estacion.latitud,
+                                            estacion.longitud
+                                        );
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
             });
-
-            if (estacion) {
-                // Cerrar el popup inmediatamente
-                map.closePopup();
-                // Abrir panel directamente
-                abrirPanelDirecto(estacion.codigo, estacion.nombre, estacion.region, estacion.tipo, estacion.latitud, estacion.longitud);
-            }
-        });
+        } catch(err) {
+            console.warn('Error configurando clicks:', err);
+        }
     }, 500);
 }
 
@@ -776,12 +998,12 @@ function calcularEstadisticas(arr) {
 // =============================================================
 const VAR_COLORS = {
     'Temperatura': '#e74c3c',
-    'Presión': '#2ecc71',
-    'Humedad': '#3498db',
+    'Presión': '#4a4a4a',
+    'Humedad': '#00b894',
     'Velocidad del Viento': '#f39c12',
-    'Dirección del Viento': '#9b59b6',
-    'Ráfaga de Velocidad': '#e67e22',
-    'Lluvia': '#1abc9c'
+    'Dirección del Viento': '#6c5ce7',
+    'Ráfaga de Velocidad': '#f39c12',
+    'Lluvia': '#0984e3'
 };
 
 const VAR_ICONS = {
@@ -881,6 +1103,14 @@ function renderizarGraficos(datosGraficos) {
             const xClean = datos.x;
             const mediaMovil = calcularMediaMovil(yClean, Math.min(7, Math.floor(yClean.length / 3)));
 
+            // Rango fijo para variables específicas
+            let yRange = null;
+            let yDtick = null;
+            if (variable === 'Presión') { yRange = [900, 1100]; yDtick = 50; }
+            else if (variable === 'Humedad') { yRange = [0, 100]; yDtick = 20; }
+            // Línea segmentada para ráfaga (mismo color que viento pero estilo distinto)
+            let lineDash = (variable === 'Ráfaga de Velocidad') ? '5px,3px' : undefined;
+
             // Trazo principal: línea + área
             const tracePrincipal = {
                 x: xClean,
@@ -888,7 +1118,7 @@ function renderizarGraficos(datosGraficos) {
                 type: 'scatter',
                 mode: 'lines',
                 name: variable,
-                line: { color: colorPrincipal, width: 1.8 },
+                line: { color: colorPrincipal, width: 1.8, dash: lineDash },
                 fill: 'tozeroy',
                 fillcolor: colorPrincipal + '18',
                 connectgaps: false,
@@ -925,12 +1155,12 @@ function renderizarGraficos(datosGraficos) {
                 showlegend: false
             };
 
-            // Configuración con rangeselector
+            // Configuración del gráfico
             Plotly.newPlot(`grafico-${index}`, [tracePrincipal, tracePuntos, traceMedia], {
                 title: { text: '', font: { size: 0 } },
                 width: null,
                 height: 190,
-                margin: { l: 38, r: 8, t: 5, b: 50 },
+                margin: { l: 38, r: 8, t: 5, b: 24 },
                 font: { size: 10, family: 'Segoe UI, system-ui, sans-serif' },
                 autosize: true,
                 showlegend: false,
@@ -944,23 +1174,6 @@ function renderizarGraficos(datosGraficos) {
                     gridcolor: '#f0f0f0',
                     zeroline: false,
                     tickformat: '%d/%m %H:%M',
-                    rangeselector: {
-                        buttons: [
-                            { count: 6, label: '6h', step: 'hour', stepmode: 'backward' },
-                            { count: 12, label: '12h', step: 'hour', stepmode: 'backward' },
-                            { count: 1, label: '1d', step: 'day', stepmode: 'backward' },
-                            { count: 3, label: '3d', step: 'day', stepmode: 'backward' },
-                            { step: 'all', label: 'Todo' }
-                        ],
-                        bgcolor: '#f8f9fa',
-                        activecolor: '#1a73e8',
-                        font: { size: 9, color: '#555' },
-                        x: 0,
-                        y: -0.45,
-                        xanchor: 'left',
-                        yanchor: 'top'
-                    },
-                    rangeslider: { visible: true, thickness: 0.08, bgcolor: '#f0f4f8' }
                 },
                 yaxis: {
                     tickfont: { size: 9, color: '#888' },
@@ -968,9 +1181,11 @@ function renderizarGraficos(datosGraficos) {
                     showgrid: true,
                     gridcolor: '#f0f0f0',
                     zeroline: false,
-                    fixedrange: false
+                    fixedrange: false,
+                    range: yRange,
+                    dtick: yDtick
                 },
-                dragmode: 'pan',
+                dragmode: 'zoom',
                 modebar: {
                     orientation: 'v',
                     bgcolor: 'rgba(255,255,255,0.8)',
@@ -1058,12 +1273,18 @@ function actualizarAlturaGraficos(height) {
     const variables = Object.keys(datosGraficosActuales);
     variables.forEach((variable, index) => {
         const div = document.getElementById(`grafico-${index}`);
-        if (div) {
-            Plotly.relayout(`grafico-${index}`, {
-                height: height,
-                'xaxis.tickfont.size': esGrande ? 10 : 9,
-                'yaxis.tickfont.size': esGrande ? 10 : 9
-            });
+        // Solo relayout si el contenedor fue inicializado con Plotly.newPlot
+        // (tiene la propiedad _fullData o data que Plotly adjunta al crear el plot)
+        if (div && (div._fullData || div.data || div.querySelector('.js-plotly-plot'))) {
+            try {
+                Plotly.relayout(`grafico-${index}`, {
+                    height: height,
+                    'xaxis.tickfont.size': esGrande ? 10 : 9,
+                    'yaxis.tickfont.size': esGrande ? 10 : 9
+                });
+            } catch(e) {
+                console.warn('Error en Plotly.relayout:', e.message);
+            }
         }
     });
 }
@@ -1198,7 +1419,8 @@ function ajustarMapa() {
     const mapContainer = document.querySelector('.folium-map');
     const mapId = mapContainer ? mapContainer.id : null;
     if (mapId) {
-        const map = window[Object.keys(window).find(key => key.startsWith('map_') && key.includes(mapId))];
+        // El ID (map_xxx) ya es la clave en window, usarlo directamente
+        const map = window[mapId];
         if (map) {
             map.on('moveend', () => {
                 const center = map.getCenter();
